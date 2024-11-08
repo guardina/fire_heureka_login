@@ -8,19 +8,25 @@
 </head>
 <body>
     <div class="login-page">
-        <img src="{{ url_for('static', filename='fire_logo.png') }}" alt="Fire logo" class="fire-image">
+        <div class="login-box">
+            <div class="images-row">
+                <img src="{{ url_for('static', filename='fire_logo.png') }}" alt="Fire logo" class="fire-image">
+                <img src="{{ url_for('static', filename='uzh_logo.png') }}" alt="UZH logo" class="uzh-image">
+            </div>
+            
 
-        <form class="login-credentials" method="post">
-            <div class="myLabelAndCell">
-                <label for="username">Username:</label>
-                <input class="myInsertionCell" type="text" id="username" name="username" required>
-            </div>
-            <div class="myLabelAndCell">
-                <label for="password">Password:</label>
-                <input class="myInsertionCell" type="password" id="password" name="password" required>
-            </div>
-            <button type="submit" class="myButton">Login</button>
-        </form>
+            <form class="login-credentials" method="post">
+                <div class="myLabelAndCell">
+                    <label for="username" style="font-family: Arial, sans-serif;">Username:</label>
+                    <input class="myInsertionCell" type="text" id="username" name="username" required autocomplete="off" style="font-family: Arial, sans-serif;">
+                </div>
+                <div class="myLabelAndCell">
+                    <label for="password" style="font-family: Arial, sans-serif;">Password:</label>
+                    <input class="myInsertionCell" type="password" id="password" name="password" required autocomplete="off" style="font-family: Arial, sans-serif;">
+                </div>
+                <button type="submit" class="myButton">Login</button>
+            </form>
+        </div> 
     </div>
 </body>
 </html>

@@ -1,7 +1,7 @@
 import subprocess
 
 from flask import Flask, render_template, request, redirect, url_for, session
-import requests
+import secrets
 import mysql.connector
 
 
@@ -12,11 +12,19 @@ app.secret_key = "my_secret_key"
 def get_db_connection():
     conn = mysql.connector.connect(
         host = 'localhost',
-        user = 'alex',
+        user = 'debian',
         password = 'password',
         database = 'fire_heureka_credentials'
     )
     return conn
+
+
+
+def connect_to_heureka():
+    client_id = 'NOTHING'
+    random_state = secrets.token_urlsafe(32)
+    redirect_url = 'localhost:5000'
+    url = 'https://portal.testing.heureka.health/authorization/grant?client_id=CLIENT_ID&state={random_secret}&redirect_uri={redirect_url}'
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -28,7 +36,7 @@ def login():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+        cursor.execute("SELECT * FROM user_credentials WHERE username = %s", (username,))
         user = cursor.fetchone()
 
         if not user:
@@ -36,8 +44,8 @@ def login():
             return render_template('login.html', error=error)
 
         if password == user['password']:
-            error = "Logged in"
-            return render_template('login.html', error=error)
+            connect_to_heureka()
+            return redirect('https://portal.testing.heureka.health/authorization/grant?client_id=CLIENT_ID&state=RANDOM_ANTI_CSRF_STRING&redirect_uri=https://example.com/callback')
         else:
             error = "Wrong password"
             return render_template('login.html', error=error)

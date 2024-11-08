@@ -3,31 +3,34 @@
     --button-margin: #df1717;
 }
 
-.myButton {
-    height: 40px;
-    font-size: 24px;
-    background-color: var(--button-color);
-    border-color: var(--button-margin);
-    color:#fff;
+
+/* BOXES AND CONTAINERS */
+/* ------------------------------------------------------------------------------------------------------- */
+
+body {
+    margin: 0;
 }
-
-
-.fire-image {
-    width: 75%;
-    height: auto;
-    margin-bottom: 20px;
-}
-
 
 .login-page {
-    display: grid;
+    display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     height: 100vh;
     margin: 0;
-    padding: 0;
-    /*background-color: #f0f0f0;*/
     box-sizing: border-box;
+    background: #bbbbbb;
+}
+
+.login-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 30%;
+    padding: 100px;
+    padding-top: 40px;
+    padding-bottom: 40px;
+    margin-top: 50px;
+    background-color: #fff;
 }
 
 .login-credentials {
@@ -35,9 +38,48 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    width: 75%;
+    border-radius: 15px;
+    border: 1px solid #000; 
+    padding: 25px;
+    padding-left: 55px;
+    padding-right: 55px;
 
     gap:20px;
+    font-size: 18px;
+}
+
+
+.images-row {
+    display: flex;          /* Arrange items in a row */
+    justify-content: center; /* Center the items horizontally */
+    align-items: center;     /* Center the items vertically */
+    gap: 20px;               /* Optional: space between the logos */
+}
+
+/* ------------------------------------------------------------------------------------------------------- */
+
+/* OTHER ELEMENTS */
+
+
+/* ------------------------------------------------------------------------------------------------------- */
+
+
+
+.myButton {
+    height: 40px;
     font-size: 24px;
+    background-color: var(--button-color);
+    border-color: var(--button-margin);
+    color:#fff;
+    border-radius: 10   px;
+}
+
+.uzh-image,
+.fire-image {
+    width: 40%;
+    height: auto;
+    margin-bottom: 20px;
 }
 
 
@@ -48,17 +90,23 @@
 }
 
 .myLabelAndCell label {
-    width: 30%;                 /* Set label width */
-    margin-right: 30px;         /* Space between label and input */
+    width: 35%;
+    margin-right: 20px;
+    font-family: sans-serif;
+    font-weight: bold;
 }
 
 .myLabelAndCell .myInsertionCell {
-    width: 70%;                 /* Set input width */
-    padding: 8px;               /* Optional: padding for styling */
-    box-sizing: border-box;     /* Ensures padding doesn’t affect width */
+    width: 65%;
+    padding: 8px;
+    box-sizing: border-box;
+    border-radius: 1px;
 }
 
 .myInsertionCell {
-    height: 40px;
-    font-size: 18px;
+    height: 30px;
+    font-size: 14px;
 }
+
+
+/* ------------------------------------------------------------------------------------------------------- */
