@@ -1,6 +1,6 @@
 CREATE DATABASE IF NOT EXISTS fire_heureka_credentials;
 
-GRANT ALL PRIVILEGES ON fire_heureka_credentials.* TO 'debian'@'localhost';
+GRANT ALL PRIVILEGES ON fire_heureka_credentials.* TO 'alex'@'localhost';
 
 USE fire_heureka_credentials;
 
@@ -9,4 +9,6 @@ CREATE TABLE IF NOT EXISTS user_credentials (
     username VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL         
 );
+
+INSERT INTO user_credentials(username, password) VALUES('mock_user', 'mock_pw');
 

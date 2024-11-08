@@ -12,7 +12,7 @@ app.secret_key = "my_secret_key"
 def get_db_connection():
     conn = mysql.connector.connect(
         host = 'localhost',
-        user = 'debian',
+        user = 'alex',
         password = 'password',
         database = 'fire_heureka_credentials'
     )
@@ -21,10 +21,13 @@ def get_db_connection():
 
 
 def connect_to_heureka():
-    client_id = 'NOTHING'
+    client_id = '173e5603-6107-4521-a465-5b9dc86b2e95'
     random_state = secrets.token_urlsafe(32)
-    redirect_url = 'localhost:5000'
-    url = 'https://portal.testing.heureka.health/authorization/grant?client_id=CLIENT_ID&state={random_secret}&redirect_uri={redirect_url}'
+    redirect_url = 'https://portal.testing.heureka.health'
+    #redirect_url = 'http://localhost:5000'
+    url = f'https://portal.testing.heureka.health/authorization/grant?client_id={client_id}&state={random_state}&redirect_uri={redirect_url}'
+
+    return redirect(url)
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -44,8 +47,8 @@ def login():
             return render_template('login.html', error=error)
 
         if password == user['password']:
-            connect_to_heureka()
-            return redirect('https://portal.testing.heureka.health/authorization/grant?client_id=CLIENT_ID&state=RANDOM_ANTI_CSRF_STRING&redirect_uri=https://example.com/callback')
+            return connect_to_heureka()
+            #return redirect('https://portal.testing.heureka.health/authorization/grant?client_id=CLIENT_ID&state=RANDOM_ANTI_CSRF_STRING&redirect_uri=https://example.com/callback')
         else:
             error = "Wrong password"
             return render_template('login.html', error=error)

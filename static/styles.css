@@ -14,7 +14,7 @@ body {
 .login-page {
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     height: 100vh;
     margin: 0;
     box-sizing: border-box;
@@ -25,12 +25,22 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 30%;
+    width: 40%;
     padding: 100px;
     padding-top: 40px;
     padding-bottom: 40px;
     margin-top: 50px;
     background-color: #fff;
+    box-sizing: border-box;
+}
+
+.images-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+
+    flex-grow: 1;
 }
 
 .login-credentials {
@@ -47,14 +57,17 @@ body {
 
     gap:20px;
     font-size: 18px;
+
+    flex-grow: 4;
 }
 
+.login-footnote {
+    display: flex;
+    font-family: sans-serif;
+    align-items: flex-end;
+    height: 10%;
 
-.images-row {
-    display: flex;          /* Arrange items in a row */
-    justify-content: center; /* Center the items horizontally */
-    align-items: center;     /* Center the items vertically */
-    gap: 20px;               /* Optional: space between the logos */
+    flex-grow: 1;
 }
 
 /* ------------------------------------------------------------------------------------------------------- */
@@ -72,7 +85,7 @@ body {
     background-color: var(--button-color);
     border-color: var(--button-margin);
     color:#fff;
-    border-radius: 10   px;
+    border-radius: 10px;
 }
 
 .uzh-image,
