@@ -23,8 +23,8 @@ def get_db_connection():
 def connect_to_heureka():
     client_id = '173e5603-6107-4521-a465-5b9dc86b2e95'
     random_state = secrets.token_urlsafe(32)
-    redirect_url = 'https://portal.testing.heureka.health'
-    #redirect_url = 'http://localhost:5000'
+    #redirect_url = 'https://portal.testing.heureka.health'
+    redirect_url = 'http://localhost:5000/callback'
     url = f'https://portal.testing.heureka.health/authorization/grant?client_id={client_id}&state={random_state}&redirect_uri={redirect_url}'
 
     return redirect(url)
@@ -54,6 +54,17 @@ def login():
             return render_template('login.html', error=error)
         
     return render_template('login.html')
+
+
+
+@app.route('/callback', methods=['GET', 'POST'])
+def redirected_page() :
+    auth_code = request.args.get('code')
+    if not auth_code:
+        return "Authorization failed. No code provided.", 400
+
+    return f"Auth code received: {auth_code}"
+
 
 
 
