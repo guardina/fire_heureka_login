@@ -7,6 +7,9 @@ __pycache__/
 venv/
 .venv/
 
+# Certificates
+resources/
+
 # Distribution / packaging
 build/
 dist/

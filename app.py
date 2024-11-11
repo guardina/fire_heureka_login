@@ -1,7 +1,9 @@
 import subprocess
 
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import secrets
+import requests
+import jwt
 import mysql.connector
 
 
@@ -12,7 +14,7 @@ app.secret_key = "my_secret_key"
 def get_db_connection():
     conn = mysql.connector.connect(
         host = 'localhost',
-        user = 'alex',
+        user = 'debian',
         password = 'password',
         database = 'fire_heureka_credentials'
     )
@@ -23,7 +25,6 @@ def get_db_connection():
 def connect_to_heureka():
     client_id = '173e5603-6107-4521-a465-5b9dc86b2e95'
     random_state = secrets.token_urlsafe(32)
-    #redirect_url = 'https://portal.testing.heureka.health'
     redirect_url = 'http://localhost:5000/callback'
     url = f'https://portal.testing.heureka.health/authorization/grant?client_id={client_id}&state={random_state}&redirect_uri={redirect_url}'
 
@@ -61,9 +62,39 @@ def login():
 def redirected_page() :
     auth_code = request.args.get('code')
     if not auth_code:
-        return "Authorization failed. No code provided.", 400
+        return 'Authorization failed. No code provided.', 400
 
-    return f"Auth code received: {auth_code}"
+    token_url = 'https://token.testing.heureka.health/oauth2/token'
+    client_id = '173e5603-6107-4521-a465-5b9dc86b2e95'
+    redirect_uri = 'http://localhost:5000/callback'
+
+    payload = {
+        "grant_type": "authorization_code",
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "code": auth_code
+    }
+
+
+    try:
+        response = requests.post(
+            token_url,
+            data=payload,
+            cert=("resources/fire.crt", "resources/fire.key"),
+            headers={"Content-Type": "application/x-www-form-urlencoded"}
+        )
+        
+        if response.status_code == 200:
+            token_data = response.json()
+            access_token = token_data.get('access_token')
+            decoded_token = jwt.decode(access_token, options={"verify_signature": False})
+            sub_claim = decoded_token.get('sub')
+            return jsonify(sub_claim)
+        else:
+            return f"Failed to retrieve token. Status code: {response.status_code}, Error: {response.text}", response.status_code
+
+    except requests.exceptions.RequestException as e:
+        return f"An error occurred while requesting the token: {str(e)}", 500
 
 
 
