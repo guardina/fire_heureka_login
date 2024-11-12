@@ -8,9 +8,9 @@ CREATE TABLE IF NOT EXISTS user_credentials (
       id                    INT                 AUTO_INCREMENT          PRIMARY KEY
     , username              VARCHAR(255)        NOT NULL                UNIQUE
     , password              VARCHAR(255)        NOT NULL
-    , auth_token            VARCHAR(255)        NOT NULL                UNIQUE
-    , refresh_token         VARCHAR(255)        NOT NULL
-    , installation_id       VARCHAR(255)        NOT NULL
+    , auth_token            VARCHAR(255)        DEFAULT NULL            UNIQUE
+    , refresh_token         VARCHAR(255)        DEFAULT NULL
+    , installation_id       VARCHAR(255)        DEFAULT NULL
 );
 
-INSERT INTO user_credentials(username, password) VALUES('mock_user', 'mock_pw');
+INSERT INTO user_credentials(username, password) VALUES("mock_user", "b'$2b$12$wx9RitpuNcOJmLY.t5zlveBrlKMp.nHimig7ihMT4xDMPNzxIuytO'");

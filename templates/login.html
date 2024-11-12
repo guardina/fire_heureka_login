@@ -30,6 +30,16 @@
             <div class="login-footnote">
                 Institut für Hausarztmedizin
             </div>
+
+
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <script type="text/javascript">
+                        alert("{{ messages[0] }}");
+                    </script>
+                {% endif %}
+            {% endwith %}
         </div> 
     </div>
 </body>

@@ -1,10 +1,17 @@
-import subprocess
-
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
-import secrets
+# Web application
+from flask import Flask, render_template, request, redirect, jsonify, flash
 import requests
+
+# Security
 import jwt
+import secrets
+import bcrypt
+
+# Database
 import mysql.connector
+
+# General
+import subprocess
 import time
 
 
@@ -19,14 +26,14 @@ token_url = 'https://token.testing.heureka.health/oauth2/token'
 auth_url = 'https://portal.testing.heureka.health/authorization'
 configuration_url = 'https://api.testing.heureka.health/api-configuration'
 
+mySession = {}
+mySession['access_token'] = None
+mySession['refresh_token'] = None
+mySession['access_token_expire'] = 0
 
-session['access_token'] = None
-session['refresh_token'] = None
-session['access_token_expire'] = 0
 
 
-
-#### WEBPAGES
+##############################################  WEBPAGES  ##############################################
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -41,15 +48,15 @@ def login():
         user = cursor.fetchone()
 
         if not user:
-            error = "User doesn\'t exist"
-            return render_template('login.html', error=error)
+            flash("User doesn’t exist")
+            return render_template('login.html')
 
-        if password == user['password']:
+        if verify_password(password, user['password']):
+
             return connect_to_heureka()
-            #return redirect('https://portal.testing.heureka.health/authorization/grant?client_id=CLIENT_ID&state=RANDOM_ANTI_CSRF_STRING&redirect_uri=https://example.com/callback')
         else:
-            error = "Wrong password"
-            return render_template('login.html', error=error)
+            flash("Wrong password!")
+            #return render_template('login.html')
         
     return render_template('login.html')
 
@@ -61,7 +68,6 @@ def redirected_page():
     if not auth_code:
         return 'Authorization failed. No code provided.', 400
 
-    #client_id = '173e5603-6107-4521-a465-5b9dc86b2e95'
     redirect_uri = 'http://localhost:5000/callback'
 
     payload = {
@@ -113,17 +119,17 @@ def use_api():
 
 
 
-#### TOKEN FUNCTIONS
+##############################################  TOKEN FUNCTIONS  ##############################################
 
 def get_new_access_token():
-    refresh_token = session.get('refresh_token')
+    refresh_token = mySession.get('refresh_token')
 
     if not refresh_token:
         return jsonify({"error": "No refresh token available"}), 401
 
 
     response = requests.post(
-        TOKEN_URL,
+        token_url,
         data={
             "grant_type": "refresh_token",
             "refresh_token": refresh_token,
@@ -133,10 +139,10 @@ def get_new_access_token():
 
     if response.status_code == 200:
         token_data = response.json()
-        session['access_token'] = token_data['access_token']
-        session['access_token_expiry'] = time.time() + token_data['expires_in']
+        mySession['access_token'] = token_data['access_token']
+        mySession['access_token_expiry'] = time.time() + token_data['expires_in']
         if 'refresh_token' in token_data:
-            session['refresh_token'] = token_data['refresh_token']
+            mySession['refresh_token'] = token_data['refresh_token']
         return token_data['access_token']
     else:
         return jsonify({"error": "Failed to refresh token"}), 401
@@ -144,8 +150,8 @@ def get_new_access_token():
 
 
 def get_access_token():
-    access_token = session.get('access_token')
-    expiry = session.get('access_token_expire', 0)
+    access_token = mySession.get('access_token')
+    expiry = mySession.get('access_token_expire', 0)
 
     if not access_token or time.time() > expiry:
         access_token = get_new_access_token()
@@ -155,12 +161,12 @@ def get_access_token():
 
 
 
-#### OTHER FUNCTIONS
+##############################################  OTHER FUNCTIONS  ##############################################
 
 def get_db_connection():
     conn = mysql.connector.connect(
         host = 'localhost',
-        user = 'debian',
+        user = 'alex',
         password = 'password',
         database = 'fire_heureka_credentials'
     )
@@ -177,10 +183,23 @@ def connect_to_heureka():
 
 
 
+def hash_password(password):
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed_password
 
+
+def verify_password(provided_password, stored_password):
+    return bcrypt.checkpw(provided_password.encode('utf-8'), stored_password)
+
+
+
+##############################################  MAIN  ##############################################
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
 
 
 
