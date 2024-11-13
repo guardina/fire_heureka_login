@@ -1,5 +1,5 @@
 # Web application
-from flask import Flask, render_template, request, redirect, jsonify, flash
+from flask import Flask, render_template, request, redirect, jsonify, flash, session, url_for
 import requests
 
 # Security
@@ -13,6 +13,7 @@ import mysql.connector
 # General
 import subprocess
 import time
+from datetime import datetime, timedelta
 
 
 app = Flask(__name__)
@@ -41,22 +42,33 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
+        #hash_pw = hash_password(password)
+
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
+        #cursor.execute("INSERT INTO user_credentials(username, password) VALUES (%s, %s)", ("mock_user", hash_pw))
+        #conn.commit()
+        
+        
         cursor.execute("SELECT * FROM user_credentials WHERE username = %s", (username,))
         user = cursor.fetchone()
+        cursor.execute("SELECT user_tokens.access_token FROM user_credentials JOIN user_tokens ON user_credentials.id = user_tokens.user_id WHERE user_credentials.username = %s", (username,))
+        user_token = cursor.fetchone()
 
         if not user:
             flash("User doesn’t exist")
             return render_template('login.html')
 
         if verify_password(password, user['password']):
-
-            return connect_to_heureka()
+            session['user_id'] = user['id']
+            if not user_token:
+                return heureka_authorize()
+            else:
+                return redirect(url_for('change_password'))
         else:
             flash("Wrong password!")
-            #return render_template('login.html')
+            return render_template('login.html')
         
     return render_template('login.html')
 
@@ -89,19 +101,57 @@ def redirected_page():
         if response.status_code == 200:
             token_data = response.json()
             access_token = token_data.get('access_token')
-            decoded_token = jwt.decode(access_token, options={"verify_signature": False})
-            sub_claim = decoded_token.get('sub')
-            return jsonify(sub_claim)
+            refresh_token = token_data.get('refresh_token')
+            installation_id = jwt.decode(access_token, options={"verify_signature": False}).get('sub')
+            expiration_time = token_data.get('expires_in')
+
+            token_expiry = datetime.now() + timedelta(seconds=expiration_time)
+
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+
+            user_id = session.get('user_id')
+
+            cursor.execute("""
+            INSERT INTO user_tokens (user_id, access_token, refresh_token, token_expiry) 
+            VALUES (%s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE 
+                access_token = VALUES(access_token),
+                refresh_token = VALUES(refresh_token),
+                token_expiry = VALUES(token_expiry),
+                updated_at = CURRENT_TIMESTAMP
+            """
+            , (user_id, access_token, refresh_token, token_expiry))
+            conn.commit()
+
+            cursor.execute("""
+            UPDATE user_credentials SET installation_id = %s WHERE id = %s
+            """
+            , (installation_id, user_id))
+            conn.commit()
+
+            return redirect(url_for('change_password'))
         else:
             return f"Failed to retrieve token. Status code: {response.status_code}, Error: {response.text}", response.status_code
 
     except requests.exceptions.RequestException as e:
         return f"An error occurred while requesting the token: {str(e)}", 500
+    
+
+@app.route('/change_password', methods=['GET', 'POST'])
+def change_password():
+    if request.method == 'POST':
+        password = request.form['password']
+        password_conf = request.form['password_conf']
+
+        if (password == password_conf):
+            print("password changed")
+    return render_template('change_password.html')
 
 
 
 @app.route('/heureka_api', methods=['GET'])
-def use_api():
+def heureka_api():
     access_token = get_access_token()
 
     if not access_token:
@@ -174,7 +224,7 @@ def get_db_connection():
 
 
 
-def connect_to_heureka():
+def heureka_authorize():
     random_state = secrets.token_urlsafe(32)
     redirect_url = 'http://localhost:5000/callback'
     url = f'{auth_url}/grant?client_id={client_id}&state={random_state}&redirect_uri={redirect_url}'
