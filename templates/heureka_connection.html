@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="login-page-pw-ch">
+        <button onclick="logMessage(1)">Button 1</button>
+        <button onclick="logMessage(2)">Button 2</button>
+        <button onclick="logMessage(3)">Button 3</button>
+        <button onclick="logMessage(4)">Button 4</button>
+        <button onclick="logMessage(5)">Button 5</button>
+
+        <!-- JavaScript to handle the onclick events and log unique messages -->
+        <script>
+            function logMessage(buttonNumber) {
+                console.log("Button " + buttonNumber + " was clicked.");
+            }
+        </script> 
+    </div>
+</body>
+</html>
