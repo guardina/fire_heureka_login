@@ -27,6 +27,8 @@ token_url = 'https://token.testing.heureka.health/oauth2/token'
 auth_url = 'https://portal.testing.heureka.health/authorization'
 configuration_url = 'https://api.testing.heureka.health/api-configuration'
 
+fhirEndpoint = ""
+heurekaProxy = ""
 
 
 ##############################################  WEBPAGES  ##############################################
@@ -75,12 +77,11 @@ def login():
 
 @app.route('/callback', methods=['GET', 'POST'])
 def redirected_page():
-    print(session['mode'])
     if session['mode']:
         if session['mode'] == 'authorize':
             auth_code = request.args.get('code')
             if not auth_code:
-                return 'Authorization failed. No code provided.', 400
+                return render_template('heureka_connection.html')
 
             redirect_uri = 'http://localhost:5000/callback'
 
@@ -128,11 +129,9 @@ def redirected_page():
                 return f"An error occurred while requesting the token: {str(e)}", 500
 
         elif session['mode'] == 'update':
-            print('updato')
             return render_template('heureka_connection.html')
 
         elif session['mode'] == 'revoke':
-            print('revoko')
             return render_template('heureka_connection.html')
     
 
@@ -169,9 +168,12 @@ def heureka_api():
     if not access_token:
         return jsonify({"error": "Could not obtain access token"}), 401
 
-    #headers = {'Authorization': f'Bearer {access_token}'}
-    #response = requests.get("https://api.example.com/protected", headers=headers)
+    result = configure_heureka()
 
+    fhirEndpoint = result['fhirEndpoint']
+    heurekaProxy = result['proxy']
+    print(result['healthcareProviderId'])
+    print(result['grants'])
     return render_template('heureka_connection.html')
     
     '''
@@ -180,6 +182,17 @@ def heureka_api():
     else:
         return jsonify({"error": "Failed to access the API", "details": response.json()}), response.status_code
     '''
+
+
+
+@app.route('/heureka_authorize', methods=['GET', 'POST'])
+def heureka_authorize():
+    random_state = secrets.token_urlsafe(32)
+    redirect_url = 'http://localhost:5000/callback'
+    session['mode'] = 'authorize'
+    url = f'{auth_url}/grant?client_id={client_id}&state={random_state}&redirect_uri={redirect_url}'
+
+    return redirect(url)
 
 
 @app.route('/heureka_update', methods=['GET', 'POST'])
@@ -337,14 +350,28 @@ def get_db_connection():
     return conn
 
 
+def configure_heureka():
+    user_token = get_access_token()
 
-def heureka_authorize():
-    random_state = secrets.token_urlsafe(32)
-    redirect_url = 'http://localhost:5000/callback'
-    session['mode'] = 'authorize'
-    url = f'{auth_url}/grant?client_id={client_id}&state={random_state}&redirect_uri={redirect_url}'
+    try:
+        response = requests.get(
+            configuration_url,
+            cert=("resources/fire.crt", "resources/fire.key"),
+            headers={"Authorization": f"Bearer {user_token}"}      
+        )
 
-    return redirect(url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return jsonify({
+                "error": "Failed to fetch data",
+                "status_code": response.status_code,
+                "details": response.text
+            }), response.status_code
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
 
 
 
@@ -363,10 +390,6 @@ def verify_password(provided_password, stored_password):
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
-
 
 
 

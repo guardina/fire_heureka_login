@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS user_credentials (
 
 
 CREATE TABLE IF NOT EXISTS user_tokens (
-      id                    INT                 AUTO_INCREMENT              PRIMARY KEY
+      id                    INT                 AUTO_INCREMENT
     , user_id               INT                 NOT NULL
     , access_token          TEXT                NOT NULL
     , refresh_token         TEXT                NOT NULL
@@ -22,5 +22,6 @@ CREATE TABLE IF NOT EXISTS user_tokens (
     , created_at            TIMESTAMP           DEFAULT CURRENT_TIMESTAMP
     , updated_at            TIMESTAMP           DEFAULT CURRENT_TIMESTAMP   ON UPDATE CURRENT_TIMESTAMP
     
+    , PRIMARY KEY (id, user_id)
     , FOREIGN KEY (user_id) REFERENCES user_credentials(id)
 );
