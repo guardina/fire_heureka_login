@@ -1,5 +1,5 @@
 # Web application
-from flask import Flask, render_template, request, redirect, jsonify, flash, session, url_for
+from flask import Flask, render_template, request, redirect, jsonify, flash, session, url_for, send_file
 import requests
 
 # Security
@@ -14,6 +14,9 @@ import mysql.connector
 import subprocess
 import time
 from datetime import datetime, timedelta
+import os
+import json
+import io
 
 
 app = Flask(__name__)
@@ -26,9 +29,6 @@ client_id = '173e5603-6107-4521-a465-5b9dc86b2e95'
 token_url = 'https://token.testing.heureka.health/oauth2/token'
 auth_url = 'https://portal.testing.heureka.health/authorization'
 configuration_url = 'https://api.testing.heureka.health/api-configuration'
-
-fhirEndpoint = ""
-heurekaProxy = ""
 
 
 ##############################################  WEBPAGES  ##############################################
@@ -66,7 +66,7 @@ def login():
             if not user_token:
                 return heureka_authorize()
             else:
-                return redirect(url_for('heureka_api'))
+                return redirect(url_for('management_hub'))
         else:
             flash("Wrong password!")
             return render_template('login.html')
@@ -155,9 +155,17 @@ def change_password():
             """, (hpassword, user_id))
             conn.commit()
 
-            return redirect(url_for('heureka_api'))
+            return redirect(url_for('management_hub'))
 
     return render_template('change_password.html')
+
+
+
+@app.route('/management_hub', methods=['GET', 'POST'])
+def management_hub():
+    return render_template('heureka_connection.html')
+
+
 
 
 
@@ -168,13 +176,11 @@ def heureka_api():
     if not access_token:
         return jsonify({"error": "Could not obtain access token"}), 401
 
-    result = configure_heureka()
+    configure_heureka()
+    patients = get_patients_heureka()
+    return patients
 
-    fhirEndpoint = result['fhirEndpoint']
-    heurekaProxy = result['proxy']
-    print(result['healthcareProviderId'])
-    print(result['grants'])
-    return render_template('heureka_connection.html')
+    #return render_template('heureka_connection.html')
     
     '''
     if response.status_code == 200:
@@ -361,6 +367,11 @@ def configure_heureka():
         )
 
         if response.status_code == 200:
+            responseJson = response.json()
+            session['fhirEndpoint'] = responseJson['fhirEndpoint']
+            session['heurekaProxy'] = responseJson['proxy']
+            session['healthcareProviderId'] = responseJson['healthcareProviderId']
+            session['heurekaGrants'] = responseJson['grants']
             return response.json()
         else:
             return jsonify({
@@ -374,6 +385,110 @@ def configure_heureka():
 
 
 
+
+def get_patients_heureka():
+    os.environ['NO_PROXY'] = 'api.testing.heureka.health,authorize.testing.heureka.health,token.testing.heureka.health' 
+    user_token = get_access_token()
+
+    url = session['fhirEndpoint'] + '/Patient'
+    cert = ('resources/fire.crt', 'resources/fire.key')
+    ca_cert = 'resources/heureka-testing.pem'
+    proxies = { 
+        'https': 'http://tunnel.testing.heureka.health:7000'
+    }
+    headers={"Authorization": f"Bearer {user_token}"}  
+
+    try:
+        response = requests.get(
+            url,
+            proxies=proxies,
+            cert=cert,
+            verify=ca_cert,
+            headers=headers
+        )
+
+        if response.status_code == 200:
+            fileObj = io.BytesIO()  
+            fileObj.write('{"resourceType" : "Bundle", "entry": ['.encode('utf-8'))
+
+            bundle = json.loads(json.dumps(response.json()))
+
+            entries = bundle['entry']
+
+            for i, entry in enumerate(entries):
+                patient = entry['resource']
+                fileObj.write(json.dumps(patient).encode('utf-8'))
+                fileObj.write(",".encode('utf-8'))
+                elements_patient = get_elements_for_patient(patient['id'])
+                fileObj.write(elements_patient.encode('utf-8'))
+
+                if i < len(entries) - 1:
+                    fileObj.write(",".encode('utf-8'))
+
+            
+
+            fileObj.write(']}'.encode('utf-8'))
+            fileObj.seek(0)
+
+
+            return send_file(
+                fileObj,
+                as_attachment=True,
+                download_name="download.json",
+                mimetype="text/plain"
+            )
+
+        else:
+            print(f"Request failed with status code: {response.status_code}")
+            print("Response:", response.text)
+            return response.text
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {str(e)}")
+
+
+
+
+# includes Observation, Condition, Medications
+def get_elements_for_patient(patient_id):
+    os.environ['NO_PROXY'] = 'api.testing.heureka.health,authorize.testing.heureka.health,token.testing.heureka.health' 
+    user_token = get_access_token()
+    url_suffixes = ["/Observation?patient=Patient/", "/Condition?patient=Patient/", "/MedicationStatement?subject=Patient/"]
+
+    patient_info = ""
+
+    for url_suffix in url_suffixes:
+        url = session.get('fhirEndpoint') + url_suffix + patient_id
+        cert = ('resources/fire.crt', 'resources/fire.key')
+        ca_cert = 'resources/heureka-testing.pem'
+        proxies = { 
+            'https': 'http://tunnel.testing.heureka.health:7000'
+        }
+        headers={"Authorization": f"Bearer {user_token}"}
+
+        try:
+            response = requests.get(
+                url,
+                proxies=proxies,
+                cert=cert,
+                verify=ca_cert,
+                headers=headers
+            )
+
+            if response.status_code == 200:
+                element = json.loads(json.dumps(response.json()))
+                patient_info = patient_info + json.dumps(element['entry'][0]) + ","
+
+                #return patient_info
+            else:
+                #print(f"Request failed with status code: {response.status_code}")
+                #print("Response:", response.text)
+                return response.text
+        except requests.exceptions.RequestException as e:
+            print(f"An error occurred: {str(e)}")
+
+    patient_info = patient_info[:-1]
+    print("\n\n" + patient_info)
+    return patient_info
 
 def hash_password(password):
     salt = bcrypt.gensalt()
