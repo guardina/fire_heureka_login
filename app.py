@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 import os
 import json
 import io
+import uuid
 
 
 app = Flask(__name__)
@@ -33,6 +34,25 @@ configuration_url = 'https://api.testing.heureka.health/api-configuration'
 
 ##############################################  WEBPAGES  ##############################################
 
+
+@app.before_request
+def check_session_validity():
+    if 'username' in session:
+        user = session['username']
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+        SELECT * FROM user_credentials WHERE username = %s
+        """, (user,))
+
+        user_entry = cursor.fetchone()
+
+        if not user_entry:
+            session.clear()
+            return redirect('/')
+
+
+
 @app.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -43,7 +63,7 @@ def login():
         cursor = conn.cursor(dictionary=True)
 
         #hash_pw = hash_password(password)
-        #cursor.execute("INSERT INTO user_credentials(username, password) VALUES (%s, %s)", ("mock_user", hash_pw))
+        #cursor.execute("INSERT INTO user_credentials(username, password) VALUES (%s, %s)", (username, hash_pw))
         #conn.commit()
         
         
@@ -58,17 +78,19 @@ def login():
         user_token = cursor.fetchone()
 
         if not user:
-            flash("User doesn’t exist")
+            flash("Error: Wrong credentials")
             return render_template('login.html')
 
         if verify_password(password, user['password']):
             session['user_id'] = user['id']
+            session['username'] = user['username']
+            session['user_role'] = user['role']
             if not user_token:
                 return heureka_authorize()
             else:
                 return redirect(url_for('management_hub'))
         else:
-            flash("Wrong password!")
+            flash("Error: Wrong credentials")
             return render_template('login.html')
         
     return render_template('login.html')
@@ -81,7 +103,7 @@ def redirected_page():
         if session['mode'] == 'authorize':
             auth_code = request.args.get('code')
             if not auth_code:
-                return render_template('heureka_connection.html')
+                return render_template('heureka_connection.html', username=session.get('username'))
 
             redirect_uri = 'http://localhost:5000/callback'
 
@@ -129,10 +151,10 @@ def redirected_page():
                 return f"An error occurred while requesting the token: {str(e)}", 500
 
         elif session['mode'] == 'update':
-            return render_template('heureka_connection.html')
+            return render_template('heureka_connection.html', username=session.get('username'))
 
         elif session['mode'] == 'revoke':
-            return render_template('heureka_connection.html')
+            return render_template('heureka_connection.html', username=session.get('username'))
     
 
 @app.route('/change_password', methods=['GET', 'POST'])
@@ -163,8 +185,18 @@ def change_password():
 
 @app.route('/management_hub', methods=['GET', 'POST'])
 def management_hub():
-    return render_template('heureka_connection.html')
+    if session.get('user_id'):
+        return render_template('heureka_connection.html', username=session.get('username'))
+    else:
+        return redirect('/')
 
+
+
+
+@app.route('/logout', methods=['GET', 'POST'])
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 
 
@@ -177,8 +209,11 @@ def heureka_api():
         return jsonify({"error": "Could not obtain access token"}), 401
 
     configure_heureka()
-    patients = get_patients_heureka()
-    return patients
+    if 'WRITE' in session.get('heurekaGrants').get('PATIENT', []):
+        patients = get_patients_heureka()
+        return patients
+    else:
+        return render_template('heureka_connection.html', alert_message='You don\'t have the required permissions')
 
     #return render_template('heureka_connection.html')
     
@@ -372,6 +407,7 @@ def configure_heureka():
             session['heurekaProxy'] = responseJson['proxy']
             session['healthcareProviderId'] = responseJson['healthcareProviderId']
             session['heurekaGrants'] = responseJson['grants']
+            print(responseJson['grants'])
             return response.json()
         else:
             return jsonify({
@@ -462,7 +498,33 @@ def get_elements_for_patient(patient_id):
         proxies = { 
             'https': 'http://tunnel.testing.heureka.health:7000'
         }
-        headers={"Authorization": f"Bearer {user_token}"}
+
+        uuid_v4 = str(uuid.uuid4())
+        if "Observation" in url_suffix:
+            context_type = "OBSERVATION_CHECK"
+        elif "Condition" in url_suffix:
+            context_type = "CONDITION_CHECK"
+        elif "Medication" in url_suffix:
+            context_type = "MEDICATION_CHECK"
+
+        user_role = session.get('user_role')
+        user_name = session.get('username')
+
+        #print(uuid_v4)
+        #print(context_type)
+        #print(user_role)
+        #print(user_name)
+
+        headers = {"Authorization" : f"Bearer {user_token}"}
+        '''
+        headers={
+            "Authorization": f"Bearer {user_token}",
+            "X-HEUREKA-RequestContextId" : uuid_v4,
+            "X-HEUREKA-RequestContextType" : context_type,
+            "X-HEUREKA-UserRole" : user_role,
+            "X-HEUREKA-UserName" : user_name
+        }
+        '''
 
         try:
             response = requests.get(
@@ -479,14 +541,13 @@ def get_elements_for_patient(patient_id):
 
                 #return patient_info
             else:
-                #print(f"Request failed with status code: {response.status_code}")
-                #print("Response:", response.text)
+                print(f"Request failed with status code: {response.status_code}")
+                print("Response:", response.text)
                 return response.text
         except requests.exceptions.RequestException as e:
             print(f"An error occurred: {str(e)}")
 
     patient_info = patient_info[:-1]
-    print("\n\n" + patient_info)
     return patient_info
 
 def hash_password(password):
