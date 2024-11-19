@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS user_credentials (
     , username              VARCHAR(255)        NOT NULL                    UNIQUE
     , password              BLOB                NOT NULL
     , installation_id       VARCHAR(255)        DEFAULT NULL
+    , role                  VARCHAR(255)        DEFAULT 'PRACTICE'
 );
 
 
