@@ -7,6 +7,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <script type="text/javascript">
+                alert("{{ messages[0] }}");
+            </script>
+        {% endif %}
+    {% endwith %}
     <div class="login-page">
         <div class="login-box">
             <p>LOGIN PAGE</p>
@@ -31,16 +38,6 @@
             <div class="login-footnote">
                 Institut für Hausarztmedizin
             </div>
-
-
-
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <script type="text/javascript">
-                        alert("{{ messages[0] }}");
-                    </script>
-                {% endif %}
-            {% endwith %}
         </div> 
     </div>
 </body>

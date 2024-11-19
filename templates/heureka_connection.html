@@ -7,6 +7,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
+    {% if alert_message %}
+            alert("{{ alert_message }}");
+    {% endif %}
+    <div class="login-info">
+        <p>{{ username }}</p>
+        <button class="myButton-mini" onclick="window.location.href='/logout'">LOGOUT</button>
+    </div>
     <div class="login-page-pw-ch">
         <button class="myButton" onclick="window.location.href='/heureka_authorize'">RENEW</button>
         <button class="myButton" onclick="window.location.href='/heureka_update'">UPDATE</button>
