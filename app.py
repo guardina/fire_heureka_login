@@ -415,11 +415,10 @@ def get_patients_heureka():
 
             entries = bundle['entry']
 
-            for i, entry in enumerate(entries):
-                patient = entry['resource']
+            for i, patient in enumerate(entries):
                 fileObj.write(json.dumps(patient).encode('utf-8'))
                 fileObj.write(",".encode('utf-8'))
-                elements_patient = get_elements_for_patient(patient['id'])
+                elements_patient = get_elements_for_patient(patient['resource']['id'])
                 fileObj.write(elements_patient.encode('utf-8'))
 
                 if i < len(entries) - 1:
