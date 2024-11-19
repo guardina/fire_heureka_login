@@ -209,7 +209,7 @@ def heureka_api():
         return jsonify({"error": "Could not obtain access token"}), 401
 
     configure_heureka()
-    if 'WRITE' in session.get('heurekaGrants').get('PATIENT', []):
+    if 'READ' in session.get('heurekaGrants').get('PATIENT', []):
         patients = get_patients_heureka()
         return patients
     else:
@@ -407,7 +407,6 @@ def configure_heureka():
             session['heurekaProxy'] = responseJson['proxy']
             session['healthcareProviderId'] = responseJson['healthcareProviderId']
             session['heurekaGrants'] = responseJson['grants']
-            print(responseJson['grants'])
             return response.json()
         else:
             return jsonify({
@@ -487,65 +486,70 @@ def get_patients_heureka():
 def get_elements_for_patient(patient_id):
     os.environ['NO_PROXY'] = 'api.testing.heureka.health,authorize.testing.heureka.health,token.testing.heureka.health' 
     user_token = get_access_token()
-    url_suffixes = ["/Observation?patient=Patient/", "/Condition?patient=Patient/", "/MedicationStatement?subject=Patient/"]
+    url_suffixes = [
+        ("/Observation?patient=Patient/", session['heurekaGrants']['OBSERVATION']), 
+        ("/Condition?patient=Patient/", session['heurekaGrants']['CONDITION']), 
+        ("/MedicationStatement?subject=Patient/", session['heurekaGrants']['MEDICATION_STATEMENT'])
+    ]
 
     patient_info = ""
 
-    for url_suffix in url_suffixes:
-        url = session.get('fhirEndpoint') + url_suffix + patient_id
-        cert = ('resources/fire.crt', 'resources/fire.key')
-        ca_cert = 'resources/heureka-testing.pem'
-        proxies = { 
-            'https': 'http://tunnel.testing.heureka.health:7000'
-        }
+    for url_suffix, grants in url_suffixes:
+        if 'READ' in grants:
+            url = session.get('fhirEndpoint') + url_suffix + patient_id
+            cert = ('resources/fire.crt', 'resources/fire.key')
+            ca_cert = 'resources/heureka-testing.pem'
+            proxies = { 
+                'https': 'http://tunnel.testing.heureka.health:7000'
+            }
 
-        uuid_v4 = str(uuid.uuid4())
-        if "Observation" in url_suffix:
-            context_type = "OBSERVATION_CHECK"
-        elif "Condition" in url_suffix:
-            context_type = "CONDITION_CHECK"
-        elif "Medication" in url_suffix:
-            context_type = "MEDICATION_CHECK"
+            uuid_v4 = str(uuid.uuid4())
+            if "Observation" in url_suffix:
+                context_type = "OBSERVATION_CHECK"
+            elif "Condition" in url_suffix:
+                context_type = "CONDITION_CHECK"
+            elif "Medication" in url_suffix:
+                context_type = "MEDICATION_CHECK"
 
-        user_role = session.get('user_role')
-        user_name = session.get('username')
+            user_role = session.get('user_role')
+            user_name = session.get('username')
 
-        #print(uuid_v4)
-        #print(context_type)
-        #print(user_role)
-        #print(user_name)
+            #print(uuid_v4)
+            #print(context_type)
+            #print(user_role)
+            #print(user_name)
 
-        headers = {"Authorization" : f"Bearer {user_token}"}
-        '''
-        headers={
-            "Authorization": f"Bearer {user_token}",
-            "X-HEUREKA-RequestContextId" : uuid_v4,
-            "X-HEUREKA-RequestContextType" : context_type,
-            "X-HEUREKA-UserRole" : user_role,
-            "X-HEUREKA-UserName" : user_name
-        }
-        '''
+            headers = {"Authorization" : f"Bearer {user_token}"}
+            '''
+            headers={
+                "Authorization": f"Bearer {user_token}",
+                "X-HEUREKA-RequestContextId" : uuid_v4,
+                "X-HEUREKA-RequestContextType" : context_type,
+                "X-HEUREKA-UserRole" : user_role,
+                "X-HEUREKA-UserName" : user_name
+            }
+            '''
 
-        try:
-            response = requests.get(
-                url,
-                proxies=proxies,
-                cert=cert,
-                verify=ca_cert,
-                headers=headers
-            )
+            try:
+                response = requests.get(
+                    url,
+                    proxies=proxies,
+                    cert=cert,
+                    verify=ca_cert,
+                    headers=headers
+                )
 
-            if response.status_code == 200:
-                element = json.loads(json.dumps(response.json()))
-                patient_info = patient_info + json.dumps(element['entry'][0]) + ","
+                if response.status_code == 200:
+                    element = json.loads(json.dumps(response.json()))
+                    patient_info = patient_info + json.dumps(element['entry'][0]) + ","
 
-                #return patient_info
-            else:
-                print(f"Request failed with status code: {response.status_code}")
-                print("Response:", response.text)
-                return response.text
-        except requests.exceptions.RequestException as e:
-            print(f"An error occurred: {str(e)}")
+                    #return patient_info
+                else:
+                    print(f"Request failed with status code: {response.status_code}")
+                    print("Response:", response.text)
+                    return response.text
+            except requests.exceptions.RequestException as e:
+                print(f"An error occurred: {str(e)}")
 
     patient_info = patient_info[:-1]
     return patient_info
