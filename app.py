@@ -53,7 +53,18 @@ def check_session_validity():
 
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.after_request
+def add_cache_control(response):
+    response.cache_control.no_store = True
+    response.cache_control.no_cache = True 
+    response.cache_control.must_revalidate = True
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
@@ -188,7 +199,7 @@ def management_hub():
     if session.get('user_id'):
         return render_template('heureka_connection.html', username=session.get('username'))
     else:
-        return redirect('/')
+        return redirect('/login')
 
 
 
@@ -223,6 +234,9 @@ def heureka_api():
     else:
         return jsonify({"error": "Failed to access the API", "details": response.json()}), response.status_code
     '''
+
+
+
 
 
 
@@ -384,7 +398,7 @@ def save_token(access_token, refresh_token, token_expiry, mode):
 def get_db_connection():
     conn = mysql.connector.connect(
         host = 'localhost',
-        user = 'alex',
+        user = 'debian',
         password = 'password',
         database = 'fire_heureka_credentials'
     )
@@ -515,12 +529,6 @@ def get_elements_for_patient(patient_id):
             '''
 
             user_role = session.get('user_role')
-            user_name = session.get('username')
-
-            print(uuid_v4)
-            print(context_type)
-            print(user_role)
-            print(user_name)
 
             #headers = {"Authorization" : f"Bearer {user_token}"}
             
@@ -528,8 +536,7 @@ def get_elements_for_patient(patient_id):
                 "Authorization": f"Bearer {user_token}",
                 "X-HEUREKA-RequestContextId" : uuid_v4,
                 "X-HEUREKA-RequestContextType" : context_type,
-                "X-HEUREKA-UserRole" : user_role,
-                "X-HEUREKA-UserName" : user_name
+                "X-HEUREKA-UserRole" : user_role
             }
             
 
