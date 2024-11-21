@@ -63,7 +63,7 @@ def login():
         cursor = conn.cursor(dictionary=True)
 
         #hash_pw = hash_password(password)
-        #cursor.execute("INSERT INTO user_credentials(username, password) VALUES (%s, %s)", (username, hash_pw))
+        #cursor.execute("INSERT INTO user_credentials(username, password, role) VALUES (%s, %s, 'DEV')", (username, hash_pw))
         #conn.commit()
         
         
@@ -84,7 +84,7 @@ def login():
         if verify_password(password, user['password']):
             session['user_id'] = user['id']
             session['username'] = user['username']
-            session['user_role'] = user['role']
+            session['user_role'] = 'SYSTEM'
             if not user_token:
                 return heureka_authorize()
             else:
@@ -384,7 +384,7 @@ def save_token(access_token, refresh_token, token_expiry, mode):
 def get_db_connection():
     conn = mysql.connector.connect(
         host = 'localhost',
-        user = 'debian',
+        user = 'alex',
         password = 'password',
         database = 'fire_heureka_credentials'
     )
@@ -504,23 +504,26 @@ def get_elements_for_patient(patient_id):
             }
 
             uuid_v4 = str(uuid.uuid4())
+            context_type = "PATIENT_EXPORT"
+            '''
             if "Observation" in url_suffix:
                 context_type = "OBSERVATION_CHECK"
             elif "Condition" in url_suffix:
                 context_type = "CONDITION_CHECK"
             elif "Medication" in url_suffix:
                 context_type = "MEDICATION_CHECK"
+            '''
 
             user_role = session.get('user_role')
             user_name = session.get('username')
 
-            #print(uuid_v4)
-            #print(context_type)
-            #print(user_role)
-            #print(user_name)
+            print(uuid_v4)
+            print(context_type)
+            print(user_role)
+            print(user_name)
 
-            headers = {"Authorization" : f"Bearer {user_token}"}
-            '''
+            #headers = {"Authorization" : f"Bearer {user_token}"}
+            
             headers={
                 "Authorization": f"Bearer {user_token}",
                 "X-HEUREKA-RequestContextId" : uuid_v4,
@@ -528,7 +531,7 @@ def get_elements_for_patient(patient_id):
                 "X-HEUREKA-UserRole" : user_role,
                 "X-HEUREKA-UserName" : user_name
             }
-            '''
+            
 
             try:
                 response = requests.get(
