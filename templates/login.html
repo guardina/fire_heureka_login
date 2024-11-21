@@ -16,10 +16,10 @@
     {% endwith %}
     <div class="login-page">
         <div class="login-box">
-            <p>LOGIN PAGE</p>
+            <p class="title-text">LOGIN</p>
             <div class="images-row">
                 <img src="{{ url_for('static', filename='fire_logo.png') }}" alt="Fire logo" class="fire-image">
-                <img src="{{ url_for('static', filename='uzh_logo.png') }}" alt="UZH logo" class="uzh-image">
+                <img src="{{ url_for('static', filename='logo_ihamz.png') }}" alt="UZH logo" class="uzh-image">
             </div>
             
 
@@ -40,5 +40,12 @@
             </div>
         </div> 
     </div>
+
+
+    <script>
+        if (performance.navigation.type == 2) {
+            window.location.href = '/login';
+        }
+    </script>
 </body>
 </html>

@@ -11,6 +11,14 @@ body {
     margin: 0;
 }
 
+.title-text {
+    font-family:'Times New Roman', Times, serif;
+    font-size: 24px;
+    font-weight: bold;
+    color: #555555;
+}
+
+.login-page-man-hub,
 .login-page-pw-ch,
 .login-page {
     display: flex;
@@ -22,10 +30,9 @@ body {
     background: #bbbbbb;
 }
 
-.login-page-pw-ch {
-    background: #eeeeee;
-    flex-direction: column;
-    gap: 15px;
+.login-page-man-hub {
+    flex-direction: row;
+    gap: 150px;
 }
 
 .login-box {
@@ -38,7 +45,7 @@ body {
     margin-top: 50px;
     background-color: #fff;
     box-sizing: border-box;
-    gap: 30px;
+    gap: 20px;
 }
 
 .login-info {
@@ -46,9 +53,9 @@ body {
     gap: 30px;
     justify-content: flex-end;
     align-items: center;
-    padding-right: 50px;
+    padding: 20px 50px 0px 0px;
     font-size: 18px;
-    background: #eeeeee;
+    background: #bbbbbb;
 }
 
 .images-row {
@@ -56,8 +63,7 @@ body {
     justify-content: center;
     align-items: center;
     gap: 20px;
-
-    flex-grow: 1;
+    height: 20%;
 }
 
 .login-credentials {
@@ -68,9 +74,9 @@ body {
     width: 75%;
     border-radius: 15px;
     border: 1px solid #000; 
-    padding: 25px;
-    padding-left: 55px;
-    padding-right: 55px;
+    padding: 25px 45px 10px 45px;
+    /*padding-left: 45px;
+    padding-right: 45px;*/
 
     gap:20px;
     font-size: 18px;
@@ -80,6 +86,7 @@ body {
 
 .login-footnote {
     font-family: sans-serif;
+    color: #555555;
     height: 10%;
     display: flex;
     align-items: center;
@@ -93,7 +100,7 @@ body {
 
 /* ------------------------------------------------------------------------------------------------------- */
 
-
+.myButton-mini-user,
 .myButton-mini,
 .myButton {
     height: 40px;
@@ -106,14 +113,17 @@ body {
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
 }
 
+.myButton-mini-user,
 .myButton-mini {
     height: 25px;
     width: 100px;
     font-size: 14px;
 }
 
+.myButton-mini-user:hover,
 .myButton-mini:hover,
 .myButton:hover {
+    cursor: pointer;
     transform: translateY(2px);
     box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.2);
 }
@@ -133,23 +143,95 @@ body {
 }
 
 .myLabelAndCell label {
-    width: 35%;
+    width: 100px;
     margin-right: 20px;
     font-family: sans-serif;
     font-weight: bold;
+    box-sizing: border-box;
+    font-size: 16px;
 }
 
 .myLabelAndCell .myInsertionCell {
-    width: 65%;
+    flex-grow: 1;
     padding: 8px;
     box-sizing: border-box;
     border-radius: 1px;
-}
-
-.myInsertionCell {
     height: 30px;
     font-size: 14px;
 }
 
 
+
+
 /* ------------------------------------------------------------------------------------------------------- */
+
+
+
+
+.hidden {
+    display: none;
+}
+
+.dropdown-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    justify-content: center;
+    position: absolute;
+    right: 20px;
+    top: 60px;
+    height: 80px;
+    background-color: #fff;
+    border: 2px solid #000;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 10px 0;
+    padding: 10px;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.dropdown-menu button {
+    display: block;
+    width: 100%;
+}
+
+
+
+.left-side,
+.right-side {
+    height: 30%;
+    width: 12%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 2px solid #000;
+    border-radius: 5px;
+    padding: 10px 10px 0px 10px;
+    background-color: #fff;
+}
+
+.left-side label,
+.right-side label {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+
+.side-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 10px;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    height: 80%;
+}

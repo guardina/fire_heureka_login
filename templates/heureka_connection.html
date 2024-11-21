@@ -11,14 +11,48 @@
             alert("{{ alert_message }}");
     {% endif %}
     <div class="login-info">
-        <p>{{ username }}</p>
-        <button class="myButton-mini" onclick="window.location.href='/logout'">LOGOUT</button>
+        <button id="userButton" class="myButton-mini-user">
+            {{ username }}
+        </button>
+        <div id="userMenu" class="dropdown-menu hidden">
+            <button class="myButton-mini" onclick="window.location.href='/change_password'">Change Password</button>
+            <button class="myButton-mini" onclick="window.location.href='/logout'">Logout</button>
+        </div>
+        <!--<button class="myButton-mini" onclick="window.location.href='/logout'">LOGOUT</button>-->
     </div>
-    <div class="login-page-pw-ch">
-        <button class="myButton" onclick="window.location.href='/heureka_authorize'">RENEW</button>
-        <button class="myButton" onclick="window.location.href='/heureka_update'">UPDATE</button>
-        <button class="myButton" onclick="window.location.href='/heureka_revoke'">DELETE</button>
-        <button class="myButton" onclick="window.location.href='/heureka_api'">DOWNLOAD</button>
+    <div class="login-page-man-hub">
+        <div class="left-side">
+            <label>PERMISSIONS</label>
+            <div class="side-content">
+                <button class="myButton" onclick="window.location.href='/heureka_authorize'">RENEW</button>
+                <button class="myButton" onclick="window.location.href='/heureka_update'">UPDATE</button>
+                <button class="myButton" onclick="window.location.href='/heureka_revoke'">DELETE</button>
+            </div>
+        </div>
+        <div class="right-side">
+            <label>API calls</label>
+            <div class="side-content">
+                <button class="myButton" onclick="window.location.href='/heureka_api'">DOWNLOAD</button>
+            </div>
+        </div>
     </div>
+
+
+    <script>
+        const userButton = document.getElementById('userButton');
+        const userMenu = document.getElementById('userMenu');
+
+        userButton.addEventListener('click', () => {
+            userMenu.classList.toggle('hidden');
+            userMenu.classList.toggle('fade-in');
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!userButton.contains(event.target) && !userMenu.contains(event.target)) {
+                userMenu.classList.add('hidden');
+                userMenu.classList.remove('fade-in');
+            }
+        });
+    </script>
 </body>
 </html>
