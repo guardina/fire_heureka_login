@@ -4,9 +4,9 @@ session_start();
 function heureka_authorize() {
     $random_state = bin2hex(random_bytes(32));
 
-    $redirect_url = 'http://localhost:5000/callback';
+    $redirect_url = 'https://ihamz.ch/callback';
     $auth_url = 'https://portal.testing.heureka.health/authorization';
-    $client_id = 'your_client_id';
+    $client_id = '173e5603-6107-4521-a465-5b9dc86b2e95';
 
     $_SESSION['mode'] = 'authorize';
 

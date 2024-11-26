@@ -1,7 +1,7 @@
 CREATE DATABASE IF NOT EXISTS fire_heureka_credentials;
 
 -- GRANT ALL PRIVILEGES ON fire_heureka_credentials.* TO 'alex'@'localhost';
-GRANT ALL PRIVILEGES ON fire_heureka_credentials.* TO 'alex'@'localhost';
+GRANT ALL PRIVILEGES ON fire_heureka_credentials.* TO 'debian'@'localhost';
 
 USE fire_heureka_credentials;
 

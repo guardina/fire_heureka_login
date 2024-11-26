@@ -4,26 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="../static/styles.css">
 </head>
 <body>
-    {% with messages = get_flashed_messages() %}
+    <!-- {% with messages = get_flashed_messages() %}
         {% if messages %}
             <script type="text/javascript">
                 alert("{{ messages[0] }}");
             </script>
         {% endif %}
-    {% endwith %}
+    {% endwith %} -->
     <div class="login-page">
         <div class="login-box">
             <p class="title-text">LOGIN</p>
             <div class="images-row">
-                <img src="{{ url_for('static', filename='fire_logo.png') }}" alt="Fire logo" class="fire-image">
-                <img src="{{ url_for('static', filename='logo_ihamz.png') }}" alt="UZH logo" class="uzh-image">
+                <img src="../static/fire_logo.png" alt="Fire logo" class="fire-image">
+                <img src="../static/logo_ihamz.png" alt="UZH logo" class="uzh-image">
             </div>
             
 
-            <form class="login-credentials" method="post" action="{{ url_for('login') }}">
+            <form class="login-credentials" method="post" action="index.php">
                 <div class="myLabelAndCell">
                     <label for="username" style="font-family: Arial, sans-serif;">Username:</label>
                     <input class="myInsertionCell" type="text" id="username" name="username" required autocomplete="off" style="font-family: Arial, sans-serif;">
@@ -36,7 +36,7 @@
             </form>
 
             <div class="login-footnote">
-                Institut für Hausarztmedizin    
+                Institut für Hausarztmedizin
             </div>
         </div> 
     </div>
