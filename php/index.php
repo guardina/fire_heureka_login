@@ -80,5 +80,5 @@ function verify_password($provided_password, $stored_password) {
 
 
 
-include 'templates/login.html';
+include '../templates/login.html';
 ?>

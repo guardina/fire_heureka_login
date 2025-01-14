@@ -1,7 +1,39 @@
 :root {
-    --button-color: #df1717;
-    --button-margin: #df1717;
+    --button-color: #df0000d3;
+    --button-margin: #df0000d3;
+    --button-hover: #c70101d3;
 }
+
+
+
+@font-face {
+    font-family: 'Avenir Next LT Pro';
+    src: url('../fonts/AvenirNextLTPro-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Avenir Next LT Pro-Bold';
+    src: url('../fonts/AvenirNextLTPro-Bold.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Avenir Next LT Pro-Demi';
+    src: url('../fonts/AvenirNextLTPro-Demi.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../fonts/Montserrat-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
 
 
 /* BOXES AND CONTAINERS */
@@ -27,7 +59,7 @@ body {
     height: 100vh;
     margin: 0;
     box-sizing: border-box;
-    background: #bbbbbb;
+    background: #5f5f5f;
 }
 
 .login-page-man-hub {
@@ -36,17 +68,61 @@ body {
 }
 
 .login-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 40%;
-    padding: 0px 100px 0px 100px;
-    margin-top: 50px;
+    display: grid;
+    grid-template-rows: repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
+    width: 1000px;
+    height: 550px;
     background-color: #fff;
-    box-sizing: border-box;
-    gap: 20px;
+    border-radius: 20px;
 }
+
+
+.change-password-box {
+    display: grid;
+    width: 1000px;
+    height: 550px;
+    background-color: #fff;
+    border-radius: 20px;
+}
+
+
+.zone {
+    display: flex;
+    /*justify-content: center;*/
+    align-items: center;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    /*border: 1px solid #ccc;*/
+}
+
+.zone1 {
+    align-items: flex-start;
+    margin: 20px 0px 0px 30px;
+
+}
+
+.zone2 {
+    align-items: flex-start;
+    justify-content: flex-end;
+    margin: 50px 50px 0px 20px;
+}
+
+.zone3 {
+    align-items: flex-start;
+    justify-content: flex-end;
+    margin: 0px 0px 40px 50px;
+    flex-direction: column;
+}
+
+.zone4 {
+    align-items: flex-end;
+    justify-content: flex-end;
+    margin: 0px 50px 40px 0px;
+}
+
+
+
 
 .login-info {
     display: flex;
@@ -61,33 +137,26 @@ body {
 .images-row {
     display: flex;
     justify-content: center;
-    align-items: center;
-    gap: 20px;
-    height: 20%;
+    margin-top: 20px;
+    gap: 5px;
 }
 
 .login-credentials {
     display: flex   ;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    width: 75%;
-    border-radius: 15px;
-    border: 1px solid #000; 
-    padding: 25px 45px 10px 45px;
-    /*padding-left: 45px;
-    padding-right: 45px;*/
+    /*width: 75%;*/
+    padding: 20px 40px 10px 40px;
 
-    gap:20px;
+    gap:5px;
     font-size: 18px;
-
-    flex-grow: 4;
 }
 
 .login-footnote {
     font-family: sans-serif;
     color: #555555;
-    height: 10%;
+    height: 15px;
+    font-size: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -103,14 +172,14 @@ body {
 .myButton-mini-user,
 .myButton-mini,
 .myButton {
-    height: 40px;
+    height: 30px;
     width: 150px;
     font-size: 18px;
     background-color: var(--button-color);
-    border-color: var(--button-margin);
+    border: 1px solid var(--button-margin);
     color:#fff;
-    border-radius: 10px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    /*box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);*/ 
 }
 
 .myButton-mini-user,
@@ -124,14 +193,15 @@ body {
 .myButton-mini:hover,
 .myButton:hover {
     cursor: pointer;
-    transform: translateY(2px);
-    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.2);
+    background-color: var(--button-hover);
+    /*transform: translateY(2px);
+    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.2);*/
 }
 
 .uzh-image,
 .fire-image {
-    width: 40%;
-    height: auto;
+    width: 175px;
+    height: 90px;
     margin-bottom: 20px;
 }
 
@@ -144,20 +214,21 @@ body {
 
 .myLabelAndCell label {
     width: 100px;
-    margin-right: 20px;
-    font-family: sans-serif;
-    font-weight: bold;
+    margin-right: 10px;
+    font-family: 'Avenir Next LT Pro', sans-serif;
     box-sizing: border-box;
     font-size: 16px;
 }
 
 .myLabelAndCell .myInsertionCell {
-    flex-grow: 1;
     padding: 8px;
-    box-sizing: border-box;
-    border-radius: 1px;
-    height: 30px;
-    font-size: 14px;
+    font-size: 18px;
+    width: 250px;
+}
+
+.myInsertionCell {
+    border-radius: 5px;
+    border: 1px solid #000;
 }
 
 

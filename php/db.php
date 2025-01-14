@@ -1,11 +1,13 @@
 <?php
     function get_db_connection() {
-        $host = 'ihmzclin.mysql.db.internal';
-        $dbname = 'ihmzclin_fireHeurekaCredentials';
-        //$username = 'debian';
-        $username = 'ihmzclin';
-        //$password = 'password';
-        $password = 'M1jTjJTXgnE?bFQW-cmz';
+        $host = 'localhost';
+        //$host = 'ihmzclin.mysql.db.internal';
+        $dbname = 'fire_heureka_credentials';
+        //$dbname = 'ihmzclin_fireHeurekaCredentials';
+        $username = 'alex';
+        //$username = 'ihmzclin';
+        $password = 'password';
+        //$password = 'M1jTjJTXgnE?bFQW-cmz';
         try {
             $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
             $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
