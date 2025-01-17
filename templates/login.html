@@ -17,28 +17,38 @@
             </div>
 
 
-            <div class="zone zone2" style="font-family: 'Avenir Next LT Pro-Regular', sans-serif; font-size:18px">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+            <div class="zone zone2" style="font-family: 'Avenir Next LT Pro-Regular', sans-serif; font-size:26px; font-weight: bold" id="zone2_text">
+                Connect FIRE with Heureka Health
             </div>
 
             <div class="zone zone3" style="font-family:'Avenir Next LT Pro-Bold', sans-serif; font-size: 66px; font-weight: bold; color:#444444">
-                <div style="font-size: 72px;">
+                <div>
                     ON <span style="color: rgb(211, 4, 4);">FIRE</span>
                 </div>
-                <div style="font-size: 36px;" id="login_text_1">
+                <div style="font-size: 32px" id="login_text_1">
                     für die
                 </div>
-                <div style="font-size: 36px" id="login_text_2">
+                <div style="font-size: 32px;" id="login_text_2">
                     Hausarztmedizin
                 </div>
-                <div id="login_text_3">
+                <div id="login_text_3" style="font-size: 51px">
                     seit 2009
                 </div>
             </div>
 
 
             <div class="zone zone4">
-                <form class="login-credentials" method="post" action="index.php" style="align-items:flex-end">
+                <div class="images-row" style="gap: 0px; margin-top: 0px;">
+                    <img src="../static/fire_logo.png" alt="Fire logo" class="image">
+                    <img src="../static/double_arrow.png" alt="Double arrow" class="image-arrow">
+                    <img src="../static/placeholder_heureka.jpg" alt="Heureka" class="image">
+                </div>
+
+                <div id="information_text" style="font-size: 24px; text-decoration: underline; display: flex; justify-content: center; cursor: pointer;" onclick="openInfoBox()">
+                    More information
+                </div>
+
+                <form class="login-credentials" method="post" action="index.php" style="align-items:flex-end;">
                     <div class="myLabelAndCell">
                         <label for="username">Username:</label>
                         <input class="myInsertionCell" type="text" id="username" name="username" required autocomplete="off" style="font-family: Arial, sans-serif;">
@@ -49,9 +59,18 @@
                     </div>
                     <button type="submit" class="myButton">Login</button>
                 </form>
+
+                <div style="display: flex; align-items: flex-end; justify-content: flex-end; padding: 0px 40px 0px 40px; height: 100%">
+                    <div style="display: flex; align-items: flex-end; justify-content: center; font-size: 14px">
+                        &copy; IHAMZ (2025), Version 1.0
+                    </div>
+                </div>
+                
             </div>
         </div> 
     </div>
+
+    <div id="infoBox" class="hidden-box"></div>
 
 
     <script>
@@ -61,28 +80,61 @@
 
         let userLanguage = navigator.language || navigator.userLanguage;
 
-        console.log(userLanguage);
-
         const translations = {
             en: {
-                login_text_1: "for the",
-                login_text_2: "general practice medicine",
-                login_text_3: "since 2009"
+                login_text_1: "for the general",
+                login_text_2: "practice medicine",
+                login_text_3: "since 2009",
+
+                information_text: "More information",
+                zone2_text: "Connect FIRE with Heureka Health",
+                info_box_text: "<button class='close-btn' onclick='closeInfoBox()'>✖</button> Dear FIRE user <br><br> To give FIRE access to your data via Heureka, you must log in here with the FIRE user name and password we have sent you. You will then be redirected to the Heureka portal, where you must log in with your Heureka login and authorize access to FIRE. If you have any questions, please contact us at <a href='mailto:fire@usz.ch'>fire@usz.ch<a>. <br><br> Thank you for your participation!"
             },
             de: {
                 login_text_1: "für die",
                 login_text_2: "Hausarztmedizin",
-                login_text_3: "seit 2009"
+                login_text_3: "seit 2009",
+
+                information_text: "Mehr Informationen",
+                zone2_text: "Verbinden Sie FIRE mit Heureka Health",
+                info_box_text: "<button class='close-btn' onclick='closeInfoBox()'>✖</button> Lieber FIRE-User <br><br> Damit FIRE über Heureka Zugriff auf Ihre Daten bekommt, müssen Sie sich hier mit Ihrem FIRE-Username und Passwort, das wir Ihnen geschickt haben, einloggen. Danach werden Sie zum Heureka-Portal weitergeleitet, wo Sie sich mit Ihrem Heureka-Login einloggen und den Zugriff auf FIRE freigeben müssen. Bei Fragen melden Sie sich bitte auf <a href='mailto:fire@usz.ch'>fire@usz.ch.<a> <br><br> Vielen Dank für Ihre Teilnahme!"
             },
             fr: {
                 login_text_1: "pour la",
                 login_text_2: "médecine générale",
-                login_text_3: "depuis 2009"
+                login_text_3: "depuis 2009",
+
+                information_text: "Plus d'information",
+                zone2_text: "Connectez FIRE avec Heureka Health",
+                info_box_text: "<button class='close-btn' onclick='closeInfoBox()'>✖</button>Cher utilisateur FIRE <br><br> Pour que FIRE puisse accéder à vos données via Heureka, vous devez vous connecter ici avec le nom d'utilisateur FIRE et le mot de passe que nous vous avons envoyés. Vous serez ensuite redirigé vers le portail Heureka, où vous devrez vous connecter avec votre login Heureka et autoriser l'accès à FIRE. Si vous avez des questions, veuillez nous contacter à l'adresse <a href='mailto:fire@usz.ch'>fire@usz.ch.<a> <br><br> Nous vous remercions de votre participation!"
             },
             it: {
                 login_text_1: "per la",
                 login_text_2: "medicina di base",
-                login_text_3: "dal 2009"
+                login_text_3: "dal 2009",
+
+                information_text: "Più informazioni",
+                zone2_text: "Connetti FIRE con Heureka Health",
+                info_box_text: "<button class='close-btn' onclick='closeInfoBox()'>✖</button> Gentile utente FIRE <br><br> per consentire a FIRE di accedere ai suoi dati tramite Heureka, deve effettuare il login qui con il nome utente e la password FIRE che le abbiamo inviato. Verrà quindi reindirizzato al portale Heureka, dove dovrà accedere con il suo login Heureka e autorizzare l'accesso a FIRE. Se avete domande, contattateci all'indirizzo <a href='mailto:fire@usz.ch'>fire@usz.ch.<a> <br><br> Grazie per la vostra partecipazione!"
+            }
+        };
+
+        const sizes = {
+            en: {
+                login_text_2: "31px",
+                login_text_3: "50px"
+            },
+            de: {
+                login_text_2: "32px",
+                login_text_3: "59px"
+            },
+            fr: {
+                login_text_2: "29px",
+                login_text_3: "44px"
+            },
+            it: {
+                login_text_2: "32px",
+                login_text_3: "62px"
             }
         };
 
@@ -97,6 +149,24 @@
         document.getElementById("login_text_1").textContent = translations[selectedLang].login_text_1;
         document.getElementById("login_text_2").textContent = translations[selectedLang].login_text_2;
         document.getElementById("login_text_3").textContent = translations[selectedLang].login_text_3;
+
+        document.getElementById("login_text_2").style.fontSize = sizes[selectedLang].login_text_2;
+        document.getElementById("login_text_3").style.fontSize = sizes[selectedLang].login_text_3;
+
+        document.getElementById("information_text").textContent = translations[selectedLang].information_text;
+        document.getElementById("zone2_text").textContent = translations[selectedLang].zone2_text;
+        document.getElementById("infoBox").innerHTML = translations[selectedLang].info_box_text;
+
+        function openInfoBox() {
+            const box = document.getElementById("infoBox");
+            box.style.display = "block";
+        }
+
+
+        function closeInfoBox() {
+            const box = document.getElementById("infoBox");
+            box.style.display = "none";
+        }
     </script>
 </body>
 </html>
