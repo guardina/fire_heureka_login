@@ -57,7 +57,11 @@
                         <label for="password">Password:</label>
                         <input class="myInsertionCell" type="password" id="password" name="password" required autocomplete="off" style="font-family: Arial, sans-serif;">
                     </div>
-                    <button type="submit" class="myButton">Login</button>
+                    <div style="display: flex; align-items: center; gap: 15px">
+                        <a style="font-size: 12px; text-decoration: underline; cursor: pointer;" id="frgt_pw_text" onclick="emailForPassword()">Forgotten password?</a>
+                        <button type="submit" class="myButton">Login</button>
+                    </div>
+                    
                 </form>
 
                 <div style="display: flex; align-items: flex-end; justify-content: flex-end; padding: 0px 40px 0px 40px; height: 100%">
@@ -86,6 +90,8 @@
                 login_text_2: "practice medicine",
                 login_text_3: "since 2009",
 
+                frgt_pw_text: "Password forgotten?",
+
                 information_text: "More information",
                 zone2_text: "Connect FIRE with Heureka Health",
                 info_box_text: "<button class='close-btn' onclick='closeInfoBox()'>✖</button> Dear FIRE user <br><br> To give FIRE access to your data via Heureka, you must log in here with the FIRE user name and password we have sent you. You will then be redirected to the Heureka portal, where you must log in with your Heureka login and authorize access to FIRE. If you have any questions, please contact us at <a href='mailto:fire@usz.ch'>fire@usz.ch<a>. <br><br> Thank you for your participation!"
@@ -94,6 +100,8 @@
                 login_text_1: "für die",
                 login_text_2: "Hausarztmedizin",
                 login_text_3: "seit 2009",
+
+                frgt_pw_text: "Vergessenes Passwort",
 
                 information_text: "Mehr Informationen",
                 zone2_text: "Verbinden Sie FIRE mit Heureka Health",
@@ -104,6 +112,8 @@
                 login_text_2: "médecine générale",
                 login_text_3: "depuis 2009",
 
+                frgt_pw_text: "Mot de pass oubliée?",
+
                 information_text: "Plus d'information",
                 zone2_text: "Connectez FIRE avec Heureka Health",
                 info_box_text: "<button class='close-btn' onclick='closeInfoBox()'>✖</button>Cher utilisateur FIRE <br><br> Pour que FIRE puisse accéder à vos données via Heureka, vous devez vous connecter ici avec le nom d'utilisateur FIRE et le mot de passe que nous vous avons envoyés. Vous serez ensuite redirigé vers le portail Heureka, où vous devrez vous connecter avec votre login Heureka et autoriser l'accès à FIRE. Si vous avez des questions, veuillez nous contacter à l'adresse <a href='mailto:fire@usz.ch'>fire@usz.ch.<a> <br><br> Nous vous remercions de votre participation!"
@@ -112,6 +122,8 @@
                 login_text_1: "per la",
                 login_text_2: "medicina di base",
                 login_text_3: "dal 2009",
+
+                frgt_pw_text: "Password dimenticata?",
 
                 information_text: "Più informazioni",
                 zone2_text: "Connetti FIRE con Heureka Health",
@@ -153,6 +165,8 @@
         document.getElementById("login_text_2").style.fontSize = sizes[selectedLang].login_text_2;
         document.getElementById("login_text_3").style.fontSize = sizes[selectedLang].login_text_3;
 
+        document.getElementById("frgt_pw_text").textContent = translations[selectedLang].frgt_pw_text;
+
         document.getElementById("information_text").textContent = translations[selectedLang].information_text;
         document.getElementById("zone2_text").textContent = translations[selectedLang].zone2_text;
         document.getElementById("infoBox").innerHTML = translations[selectedLang].info_box_text;
@@ -160,12 +174,31 @@
         function openInfoBox() {
             const box = document.getElementById("infoBox");
             box.style.display = "block";
+
+            document.getElementById("infoBox").innerHTML = translations[selectedLang].info_box_text;
         }
 
 
         function closeInfoBox() {
             const box = document.getElementById("infoBox");
             box.style.display = "none";
+        }
+
+
+        function emailForPassword() {
+            const box = document.getElementById("infoBox");
+            if (selectedLang == 'de') {
+                box.innerHTML = "<button class='close-btn' onclick='closeInfoBox()'>✖</button> Eine Passwort-Wiederherstellungsfunktion ist nicht implementiert. Bitte kontaktieren Sie uns hier: <a href='mailto:fire@usz.ch'>fire@usz.ch.<a>";
+            } else if (selectedLang == 'fr')  {
+                box.innerHTML = "<button class='close-btn' onclick='closeInfoBox()'>✖</button> Une fonction de récupération du mot de passe n'a pas été mise en place. Veuillez nous contacter ici :";
+            } else if (selectedLang == 'it') {
+                box.innerHTML = "<button class='close-btn' onclick='closeInfoBox()'>✖</button> Al momento un servizio per recuperare la password non è ancora funzionale. Si prega di conttatarci alla seguente email: <a href='mailto:fire@usz.ch'>fire@usz.ch.<a>";
+            } else {
+                box.innerHTML = "<button class='close-btn' onclick='closeInfoBox()'>✖</button> A password-recovery function has not been implemented. Please contact us here: <a href='mailto:fire@usz.ch'>fire@usz.ch.<a>";
+            }
+            
+            box.style.display = "block";
+
         }
     </script>
 </body>
