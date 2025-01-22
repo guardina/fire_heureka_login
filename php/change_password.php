@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bindParam(':user_id', $user_id);
 
         if ($stmt->execute()) {
-            header("Location: management_hub");
+            header("Location: ../templates/connection_successful.html");
             exit();
         } else {
             $_SESSION['error_message'] = "There was an error updating your password.";
@@ -34,5 +34,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-include 'templates/change_password.html';
+include '../templates/change_password.html';
 ?>

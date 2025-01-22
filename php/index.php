@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: heureka_authorize");
             exit();
         } else {
-            header("Location: management_hub");
+            header("Location: ../templates/connection_successful.html");
             exit();
         }
     } else {

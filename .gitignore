@@ -10,6 +10,9 @@ venv/
 # Certificates
 resources/
 
+# python extra
+python/
+
 # Distribution / packaging
 build/
 dist/

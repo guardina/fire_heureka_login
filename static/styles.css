@@ -242,6 +242,11 @@ body {
     height: 80px;
 }
 
+.heureka-image {
+    width: 150px;
+    height: 50px;
+}
+
 .image-arrow {
     width: 100px;
     height: 50px;
@@ -250,7 +255,7 @@ body {
 .uzh-image,
 .fire-image {
     width: 130px;
-    height: 60px;
+    height: 70px;
     margin-bottom: 20px;
 }
 
