@@ -3,7 +3,27 @@
 session_start();
 require_once "db.php";
 
+if (!isset($_SESSION['user_id'])) {
+    header("Location: index.php");
+    exit();
+}
+
+
+
+if (!check_temp_pw()) {
+    header("Location: /templates/connection_successful.html");
+    exit();
+} else {
+    header("Location: change_password.php");
+}
+
 $conn = get_db_connection();
+
+
+redirected_page();
+
+
+
 
 function redirected_page() {
     global $conn;
@@ -17,7 +37,7 @@ function redirected_page() {
                 return;
             }
 
-            $redirect_uri = 'https://ihamz.ch/callback';
+            $redirect_uri = 'https://localhost:5000/callback';
 
             $payload = [
                 "grant_type" => "authorization_code",
@@ -81,6 +101,9 @@ function redirected_page() {
             $username = $_SESSION['username'] ?? null;
             echo render_template('heureka_connection.html', ['username' => $username]);
         }
+    } else {
+        header("Location: index.php");
+        exit();
     }
 }
 
@@ -93,8 +116,4 @@ function render_template($template, $data = []) {
 }
 
 
-
-
-redirected_page();
-//include "templates/heureka_connection.html";
 ?>

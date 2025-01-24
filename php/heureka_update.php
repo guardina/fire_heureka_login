@@ -5,7 +5,7 @@ require_once 'db.php';
 function update_permissions() {
     $user_id = $_SESSION['user_id'] ?? null;
     
-    $redirect_url = 'https://ihamz.ch/callback';
+    $redirect_url = 'https://localhost:5000/callback';
     
     if ($user_id) {
         $conn = get_db_connection();

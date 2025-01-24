@@ -4,7 +4,7 @@
         //$host = 'ihmzclin.mysql.db.internal';
         $dbname = 'fire_heureka_credentials';
         //$dbname = 'ihmzclin_fireHeurekaCredentials';
-        $username = 'alex';
+        $username = 'debian';
         //$username = 'ihmzclin';
         $password = 'password';
         //$password = 'M1jTjJTXgnE?bFQW-cmz';
@@ -44,6 +44,62 @@
                 WHERE user_id = ?");
     
             $stmt->execute([$access_token, $refresh_token, $new_token_expiry, $user_id]);
+        }
+    }
+
+
+    function check_access_token() {
+        $user_id = $_SESSION['user_id'] ?? null;
+    
+        if (!$user_id) {
+            return false;
+        }
+    
+        $conn = get_db_connection();
+    
+        $query = "SELECT user_tokens.access_token
+            FROM user_credentials
+            JOIN user_tokens ON user_credentials.id = user_tokens.user_id
+            WHERE user_credentials.id = ?";
+    
+        if ($stmt = $conn->prepare($query)) {
+            $stmt->execute([$user_id]);
+    
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+            if ($result) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+
+    function check_temp_pw() {
+        $user_id = $_SESSION['user_id'] ?? null;
+    
+        if (!$user_id) {
+            return false;
+        }
+    
+        $conn = get_db_connection();
+
+
+        $query = "SELECT temp_pw
+            FROM user_credentials
+            WHERE user_credentials.id = ?";
+
+        if ($stmt = $conn->prepare($query)) {
+            $stmt->execute([$user_id]);
+
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($result['temp_pw'] == 1) {
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 ?>

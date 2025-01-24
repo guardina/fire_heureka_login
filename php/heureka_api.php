@@ -1,6 +1,9 @@
 <?php
 session_start();
 require_once 'db.php';
+require 'vendor/autoload.php';
+
+use Ramsey\Uuid\Guid\Guid;
 
 function heureka_api() {
     $access_token = get_access_token();
@@ -193,7 +196,7 @@ function configure_heureka() {
 
 function get_patients_heureka() {
     session_start();
-    putenv('NO_PROXY=api.testing.heureka.health,authorize.testing.heureka.health,token.testing.heureka.health');
+    /*putenv('NO_PROXY=api.testing.heureka.health,authorize.testing.heureka.health,token.testing.heureka.health');*/
 
     $user_token = get_access_token();
 
@@ -204,7 +207,6 @@ function get_patients_heureka() {
     }
 
     $url = $fhir_endpoint . '/Patient';
-    echo "$url<br>";
     $cert = [
         "cert" => __DIR__ . "/resources/fire.crt",
         "key"  => __DIR__ . "/resources/fire.key"
@@ -216,11 +218,18 @@ function get_patients_heureka() {
 
     $ch = curl_init();
 
+    $uuid_v4 = Guid::uuid4()->toString();
+    $context_type = "PATIENT_EXPORT";
+    $heureka_role = $_SESSION['heureka_role'] ?? 'SYSTEM';
+
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         "Authorization: Bearer $user_token",
-        'Content-Type: application/x-www-form-urlencoded'
+        "Content-Type: application/x-www-form-urlencoded",
+        "X-HEUREKA-RequestContextId: $uuid_v4",
+        "X-HEUREKA-RequestContextType: $context_type",
+        "X-HEUREKA-UserRole: $heureka_role"
     ]);
     curl_setopt($ch, CURLOPT_SSLCERT, $cert['cert']);
     curl_setopt($ch, CURLOPT_SSLKEY, $cert['key']);
@@ -244,10 +253,13 @@ function get_patients_heureka() {
             fwrite($fileObj, '{"resourceType" : "Bundle", "entry": [');
 
             foreach ($entries as $i => $patient) {
+                $uuid_v4 = Guid::uuid4()->toString();
+                $context_type = "PATIENT_EXPORT";
+                $heureka_role = $_SESSION['heureka_role'] ?? 'SYSTEM';
                 fwrite($fileObj, json_encode($patient));
-                fwrite($fileObj, ",");
                 
                 $elements_patient = get_elements_for_patient($patient['resource']['id']);
+                fwrite($fileObj, ",");
                 fwrite($fileObj, $elements_patient);
 
                 if ($i < count($entries) - 1) {
@@ -274,5 +286,92 @@ function get_patients_heureka() {
         ]);
     }
 }
+
+
+
+
+function get_elements_for_patient($patient_id/*, $uuid_v4, $context_type, $heureka_role*/) {
+    /*putenv('NO_PROXY=api.testing.heureka.health,authorize.testing.heureka.health,token.testing.heureka.health');*/
+    
+    $user_token = get_access_token();
+    $url_suffixes = [
+        ["/Observation?patient=Patient/", $_SESSION['heurekaGrants']['OBSERVATION']],
+        ["/Condition?patient=Patient/", $_SESSION['heurekaGrants']['CONDITION']],
+        ["/MedicationStatement?subject=Patient/", $_SESSION['heurekaGrants']['MEDICATION_STATEMENT']]
+    ];
+
+    $patient_info = "";
+
+    foreach ($url_suffixes as $suffix_data) {
+        $url_suffix = $suffix_data[0];
+        $grants = $suffix_data[1];
+
+        if (in_array('READ', $grants)) {
+            $url = $_SESSION['fhirEndpoint'] . $url_suffix . $patient_id;
+            $cert = ['resources/fire.crt', 'resources/fire.key'];
+            $ca_cert = 'resources/heureka-testing.pem';
+            $proxies = [
+                'https' => 'http://tunnel.testing.heureka.health:7000'
+            ];
+
+            $headers = [
+                "Authorization: Bearer $user_token"/*,
+                "X-HEUREKA-RequestContextId: $uuid_v4",
+                "X-HEUREKA-RequestContextType: $context_type",
+                "X-HEUREKA-UserRole: $heureka_role"*/
+            ];
+
+            try {
+                $options = [
+                    CURLOPT_URL => $url,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_SSL_VERIFYPEER => true,
+                    CURLOPT_SSLCERT => $cert[0],
+                    CURLOPT_SSLKEY => $cert[1],
+                    CURLOPT_CAINFO => $ca_cert,
+                    CURLOPT_PROXY => $proxies['https'],
+                    CURLOPT_HTTPHEADER => $headers,
+                    CURLOPT_VERBOSE => true
+                ];
+
+                $ch = curl_init();
+                curl_setopt_array($ch, $options);
+                $response = curl_exec($ch);
+
+                $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+                if ($http_code == 200) {
+                    $response_data = json_decode($response, true);
+                    if (isset($response_data['entry'][0])) {
+                        $patient_info .= json_encode($response_data['entry'][0]) . ",";
+                    }
+                } else {
+                    $patient_info .= "Request failed with status code: $http_code\n";
+                    echo "Request failed with status code: $http_code\n";
+                    echo "Response: $response\n";
+                    curl_close($ch);
+                    return $response;
+                }
+
+                curl_close($ch);
+            } catch (Exception $e) {
+                echo "An error occurred: " . $e->getMessage();
+            }
+        }
+    } 
+
+    $patient_info = rtrim($patient_info, ",");
+    return $patient_info;
+}
+
+
+
+
+
+
+
+
+
+
 
 heureka_api();

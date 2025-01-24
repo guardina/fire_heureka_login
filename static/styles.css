@@ -70,18 +70,9 @@ body {
 .login-box {
     display: grid;
     grid-template-rows: 20% 80%;
-    grid-template-columns: 40% 60%;
+    /*grid-template-columns: 40% 60%;*/
     width: 1100px;
     height: 600px;
-    background-color: #fff;
-    border-radius: 20px;
-}
-
-
-.change-password-box {
-    display: grid;
-    width: 1000px;
-    height: 550px;
     background-color: #fff;
     border-radius: 20px;
 }
@@ -97,7 +88,7 @@ body {
 }
 
 .zone1 {
-    align-items: flex-start;
+    align-items: center;
     margin: 10px 0px 0px 40px;
 
 }
@@ -114,6 +105,9 @@ body {
     margin: 20px 0px 0px 50px;
     flex-direction: column;
     /*gap: 10px;*/
+    font-family:'Avenir Next LT Pro-Bold', sans-serif;
+    font-size: 66px;
+    color:#444444
 }
 
 .zone4 {
@@ -122,6 +116,29 @@ body {
     align-items: center;
     justify-content: center;
     margin: 0px 0px 5px 0px;
+}
+
+
+.zone-row {
+    display: grid;
+    grid-template-columns: 40% 60%;
+    width: 100%;
+}
+
+.zone-footnote {
+    display: grid;
+    flex-direction: column;
+    grid-template-rows: 95% 5%;
+    font-family: Arial, sans-serif;
+}
+
+
+.footnote {
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 14px;
+    font-family: 'Avenir Next LT Pro';
 }
 
 
@@ -140,7 +157,7 @@ body {
     color: #333;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     z-index: 1000;
-    font-family: "Avenir Next LT Pro-Regular', sans-serif";
+    font-family: 'Avenir Next LT Pro';
 }
 
 
@@ -178,8 +195,6 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 20px;
-    gap: 5px;
 }
 
 .login-credentials {
@@ -210,53 +225,35 @@ body {
 
 /* ------------------------------------------------------------------------------------------------------- */
 
-.myButton-mini-user,
-.myButton-mini,
 .myButton {
     height: 30px;
     width: 150px;
-    font-size: 18px;
+    font-size: 20px;
     background-color: var(--button-color);
     border: 1px solid var(--button-margin);
     color:#fff;
     border-radius: 5px;
-    /*box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);*/ 
+    font-family: 'Avenir Next LT Pro';
 }
 
-.myButton-mini-user,
 .myButton-mini {
     height: 25px;
     width: 100px;
     font-size: 14px;
 }
 
-.myButton-mini-user:hover,
-.myButton-mini:hover,
 .myButton:hover {
     cursor: pointer;
     background-color: var(--button-hover);
 }
 
-.image {
-    width: 150px;
-    height: 80px;
+
+.fire-heureka-logo {
+    width: 375px;
 }
 
-.heureka-image {
-    width: 150px;
-    height: 50px;
-}
-
-.image-arrow {
-    width: 100px;
-    height: 50px;
-}
-
-.uzh-image,
-.fire-image {
-    width: 130px;
-    height: 70px;
-    margin-bottom: 20px;
+.fire-uzh-logo {
+    width: 300px;
 }
 
 
@@ -269,7 +266,7 @@ body {
 .myLabelAndCell label {
     width: 150px;
     margin-right: 10px;
-    font-family: 'Avenir Next LT Pro', sans-serif;
+    font-family: 'Avenir Next LT Pro';
     font-weight: bold;
     box-sizing: border-box;
     font-size: 16px;

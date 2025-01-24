@@ -4,19 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Success</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
-        }
-        h1 {
-            color: green;
-        }
-    </style>
+    <link rel="stylesheet" href="../static/success.css">
 </head>
 <body>
-    <h1>Successful Connection</h1>
-    <p>You have successfully connected FIRE to Heureka.</p>
+    <div class="login-page">
+        <div class="login-box">
+        	<div class="images-row">
+            	<img src="../static/FIRE_UZH.png" alt="FIRE-UZH logo" class="fire-uzh-logo">
+			</div>
+            
+            <div class="zone">
+                <div class="zone1">
+                    <h1 id="connection_text">Connection successful!</h1>
+                    <p id="additional_text">FIRE and Heureka are now connected.</p>
+                </div>
+                <div class="footnote">
+                    &copy; IHAMZ (2025), Version 1.0
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const translations = {
+            en: {
+                connection_text: "Connection successful!",
+                additional_text: "FIRE and Heureka are now connected.",
+            },
+            de: {
+                connection_text: "Verbindung erfolgreich!",
+                additional_text: "FIRE und Heureka sind miteinander verbunden.",
+            },
+            fr: {
+                connection_text: "Connexion réussie!",
+                additional_text: "FIRE et Heureka sont connectés.",
+            },
+            it: {
+                connection_text: "Connessione riuscita",
+                additional_text: "FIRE e Heureka sono collegati.",
+            }
+        };
+
+        let userLanguage = navigator.language || navigator.userLanguage;
+        let selectedLang = "en";
+
+        if (translations[userLanguage]) {
+            selectedLang = userLanguage;
+        } else {
+            selectedLang = "en";
+        }
+
+        document.getElementById("connection_text").textContent = translations[selectedLang].connection_text;
+        document.getElementById("additional_text").textContent = translations[selectedLang].additional_text;
+    </script>
 </body>
 </html>
