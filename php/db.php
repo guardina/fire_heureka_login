@@ -19,11 +19,10 @@
 
 
 
-    function save_token($access_token, $refresh_token, $token_expiry, $mode) {
+    function save_token($access_token, $refresh_token, $token_expiry, $user_id, $mode) {
         $conn = get_db_connection();
     
         $new_token_expiry = date('Y-m-d H:i:s', time() + $token_expiry);
-        $user_id = $_SESSION['user_id'];
     
         if ($mode === 'insert') {
             $stmt = $conn->prepare("INSERT INTO user_tokens (user_id, access_token, refresh_token, token_expiry)

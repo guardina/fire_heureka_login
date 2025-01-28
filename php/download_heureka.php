@@ -1,12 +1,13 @@
 <?php
+date_default_timezone_set('Europe/Berlin');
 session_start();
 require_once 'db.php';
 require 'vendor/autoload.php';
 
 use Ramsey\Uuid\Guid\Guid;
 
-function heureka_api() {
-    $access_token = get_access_token();
+function download_data($praxis_name, $access_token, $user_id) {
+    $access_token = get_access_token($user_id);
     
     if (!$access_token) {
         header('Content-Type: application/json');
@@ -15,16 +16,16 @@ function heureka_api() {
         exit();
     }
     
-    configure_heureka();
+    configure_heureka($user_id);
 
     $heureka_grants = $_SESSION['heurekaGrants'] ?? [];
     if (isset($heureka_grants['PATIENT']) && in_array('READ', $heureka_grants['PATIENT'])) {
-        $patients = get_patients_heureka();
+        $patients = get_patients_heureka($praxis_name, $user_id);
         echo json_encode($patients);
         exit();
     } else {
         $alert_message = "You don't have the required permissions";
-        include 'templates/heureka_connection';
+        //include 'templates/heureka_connection';
         exit();
     }
 }
@@ -33,13 +34,12 @@ function heureka_api() {
 
 
 
-function get_access_token() {
-    session_start();
-    $user_id = $_SESSION['user_id'] ?? null;
+function get_access_token($user_id) {
+    //$user_id = $_SESSION['user_id'] ?? null;
 
-    if (!$user_id) {
-        return null;
-    }
+    //if (!$user_id) {
+    //    return null;
+    //}
 
     $conn = get_db_connection();
 
@@ -61,7 +61,7 @@ function get_access_token() {
             $token_expiry_time = new DateTime($token_expiry);
 
             if (!$access_token || $current_time > $token_expiry_time) {
-                $access_token = get_new_access_token();
+                $access_token = get_new_access_token($user_id);
             }
 
             return $access_token;
@@ -74,13 +74,12 @@ function get_access_token() {
 
 
 
-function get_new_access_token() {
-    session_start();
-    $user_id = $_SESSION['user_id'] ?? null;
+function get_new_access_token($user_id) {
+    //$user_id = $_SESSION['user_id'] ?? null;
 
-    if (!$user_id) {
-        return json_encode(["error" => "User ID not found in session"]);
-    }
+    //if (!$user_id) {
+    //    return json_encode(["error" => "User ID not found in session"]);
+    //}
 
     $conn = get_db_connection();
 
@@ -103,7 +102,6 @@ function get_new_access_token() {
             return json_encode(["error" => "No refresh token available"]);
         }
 
-
         $data = [
             "grant_type" => "refresh_token",
             "refresh_token" => $refresh_token,
@@ -115,8 +113,8 @@ function get_new_access_token() {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-        curl_setopt($ch, CURLOPT_SSLCERT, "resources/fire.crt");
-        curl_setopt($ch, CURLOPT_SSLKEY, "resources/fire.key");
+        curl_setopt($ch, CURLOPT_SSLCERT, __DIR__ . "/resources/fire.crt");
+        curl_setopt($ch, CURLOPT_SSLKEY, __DIR__ . "/resources/fire.key");
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             "Content-Type: application/x-www-form-urlencoded"
         ]);
@@ -124,7 +122,7 @@ function get_new_access_token() {
         $response = curl_exec($ch);
 
         if (curl_errno($ch)) {
-            echo "cURL Error: " . curl_error($ch);
+                 "cURL Error: " . curl_error($ch);
             return json_encode(["error" => "cURL Error occurred"]);
         }
 
@@ -133,7 +131,7 @@ function get_new_access_token() {
         $response_data = json_decode($response, true);
 
         if (isset($response_data['access_token']) && isset($response_data['refresh_token'])) {
-            save_token($response_data['access_token'], $response_data['refresh_token'], $response_data['expires_in'], 'update');
+            save_token($response_data['access_token'], $response_data['refresh_token'], $response_data['expires_in'], $user_id, 'update');
             return json_encode($response_data);
         } else {
             return json_encode(["error" => "Failed to refresh token", "details" => $response_data]);
@@ -147,9 +145,9 @@ function get_new_access_token() {
 
 
 
-function configure_heureka() {
+function configure_heureka($user_id) {
     session_start();
-    $user_token = get_access_token();
+    $user_token = get_access_token($user_id);
 
     $configuration_url = "https://api.testing.heureka.health/api-configuration";
 
@@ -160,8 +158,8 @@ function configure_heureka() {
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         "Authorization: Bearer $user_token"
     ]);
-    curl_setopt($ch, CURLOPT_SSLCERT, "resources/fire.crt");
-    curl_setopt($ch, CURLOPT_SSLKEY, "resources/fire.key");
+    curl_setopt($ch, CURLOPT_SSLCERT, __DIR__ .  "/resources/fire.crt");
+    curl_setopt($ch, CURLOPT_SSLKEY, __DIR__ .  "/resources/fire.key");
 
     $response = curl_exec($ch);
 
@@ -194,11 +192,11 @@ function configure_heureka() {
 
 
 
-function get_patients_heureka() {
+function get_patients_heureka($praxis_name, $user_id) {
     session_start();
     /*putenv('NO_PROXY=api.testing.heureka.health,authorize.testing.heureka.health,token.testing.heureka.health');*/
 
-    $user_token = get_access_token();
+    $user_token = get_access_token($user_id);
 
     $fhir_endpoint = $_SESSION['fhirEndpoint'] ?? null;
 
@@ -249,7 +247,18 @@ function get_patients_heureka() {
         if (isset($bundle['entry'])) {
             $entries = $bundle['entry'];
 
-            $fileObj = fopen('php://temp', 'r+');
+            $filePath = '/home/debian/Desktop/json_fire5_parser/json_parser/src/main/resources/files/heureka/full_download/' . $praxis_name . '.json';
+
+            echo "$filePath\n";
+
+            $fileObj = fopen($filePath, 'w');
+
+            if ($fileObj === false) {
+                // Handle error: unable to open the file for writing
+                echo "Error: Unable to open the file for writing.";
+                exit;
+            }
+
             fwrite($fileObj, '{"resourceType" : "Bundle", "entry": [');
 
             foreach ($entries as $i => $patient) {
@@ -258,7 +267,7 @@ function get_patients_heureka() {
                 $heureka_role = $_SESSION['heureka_role'] ?? 'SYSTEM';
                 fwrite($fileObj, json_encode($patient));
                 
-                $elements_patient = get_elements_for_patient($patient['resource']['id']);
+                $elements_patient = get_elements_for_patient($patient['resource']['id'], $user_id);
                 fwrite($fileObj, ",");
                 fwrite($fileObj, $elements_patient);
 
@@ -268,10 +277,10 @@ function get_patients_heureka() {
             }
 
             fwrite($fileObj, ']}');
-            rewind($fileObj);
-            header('Content-Type: application/json');
-            header('Content-Disposition: attachment; filename="download.json"');
-            fpassthru($fileObj);
+            //rewind($fileObj);
+            //header('Content-Type: application/json');
+            //header('Content-Disposition: attachment; filename="download.json"');
+            //fpassthru($fileObj);
             fclose($fileObj);
             exit;
 
@@ -290,10 +299,10 @@ function get_patients_heureka() {
 
 
 
-function get_elements_for_patient($patient_id/*, $uuid_v4, $context_type, $heureka_role*/) {
+function get_elements_for_patient($patient_id, $user_id/*, $uuid_v4, $context_type, $heureka_role*/) {
     /*putenv('NO_PROXY=api.testing.heureka.health,authorize.testing.heureka.health,token.testing.heureka.health');*/
     
-    $user_token = get_access_token();
+    $user_token = get_access_token($user_id);
     $url_suffixes = [
         ["/Observation?patient=Patient/", $_SESSION['heurekaGrants']['OBSERVATION']],
         ["/Condition?patient=Patient/", $_SESSION['heurekaGrants']['CONDITION']],
@@ -308,8 +317,8 @@ function get_elements_for_patient($patient_id/*, $uuid_v4, $context_type, $heure
 
         if (in_array('READ', $grants)) {
             $url = $_SESSION['fhirEndpoint'] . $url_suffix . $patient_id;
-            $cert = ['resources/fire.crt', 'resources/fire.key'];
-            $ca_cert = 'resources/heureka-testing.pem';
+            $cert = [__DIR__ . '/resources/fire.crt', __DIR__ . '/resources/fire.key'];
+            $ca_cert = __DIR__ . '/resources/heureka-testing.pem';
             $proxies = [
                 'https' => 'http://tunnel.testing.heureka.health:7000'
             ];
@@ -365,13 +374,26 @@ function get_elements_for_patient($patient_id/*, $uuid_v4, $context_type, $heure
 }
 
 
+$conn = get_db_connection();
 
+$sql = "
+    SELECT 
+        uc.username AS praxis_name,   
+        ut.user_id,               
+        ut.access_token           
+    FROM 
+        user_credentials uc
+    JOIN 
+        user_tokens ut
+    ON 
+        uc.id = ut.user_id;
+";
 
+$stmt = $conn->prepare($sql);
+$stmt->execute();
 
+$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-
-
-
-
-
-heureka_api();
+foreach ($results as $row) {
+    download_data($row['praxis_name'], $row['access_token'], $row['user_id']);
+}
