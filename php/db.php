@@ -1,10 +1,10 @@
 <?php
-    function get_db_connection() {
+    function get_db_connection($dbname) {
         $host = 'localhost';
         //$host = 'ihmzclin.mysql.db.internal';
-        $dbname = 'fire_heureka_credentials';
+        //$dbname = 'fire_heureka_credentials';
         //$dbname = 'ihmzclin_fireHeurekaCredentials';
-        $username = 'debian';
+        $username = 'alex';
         //$username = 'ihmzclin';
         $password = 'password';
         //$password = 'M1jTjJTXgnE?bFQW-cmz';

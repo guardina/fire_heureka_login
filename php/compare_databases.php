@@ -1,27 +1,56 @@
 <?php
     include "db.php";
 
-    $conn1 = connect_to_db('fire5_xml');
+    $db1name = 'fire5_test_new';
+    $db2name = 'fire5_test';
 
-    $patient_ids = [
-        '000713913be775158f5060eecf9ae371d30a5b78629126b9f97573741881d7e2', 
-        '00074f4f2ea875b2f4363cc6ebaa871c3f6a9f3d8191c9fc142b4dff6d6611d8',
-        '0007f9871939d86da4386a7b9bc62caea132dd9053bcbd2983b13da4389864ab',
-        '000AF638DEB4330EA34F41EB5A4E95A488E339BC690F27EAD31165579376F739',
-        '000ba851258da401e07992ba246ffc6ad6540dbff577d050d04f2f171f9304d5', 
-        '000cb689a9a237562ac36f62807e79236c693140622b484d156ce1041c6c8590',
-        '000feb1d9479372b6074b33b3b7bcd142465ded0d01994519ec5dd1ccef05e87',
-        '00109ea829a7800930aa987c35f4a751c407220444cd3c0ee117db36ea5e2b66'];
+    $conn1 = get_db_connection($db1name);
+    $conn2 = get_db_connection($db2name);
+
+    $query = "SELECT pat_sw_id FROM a_patient";
+    $get_patient_ids = $conn1->prepare($query);
+    $get_patient_ids->execute();
+
+    $patient_ids = $get_patient_ids->fetch(PDO::FETCH_ASSOC);
+    var_dump($patient_ids);
 
 
     foreach ($patient_ids as $patient_id) {
-        $check_patient_table_query = 
-        "   SELECT * 
-            FROM fire5_xml.a_patient
-            WHERE pat_sw_id = %s;
-        ";
+        $check_patient_table_query_1 = $conn1->prepare("SELECT * FROM a_patient WHERE pat_sw_id = ?");
+        $check_patient_table_query_2 = $conn2->prepare("SELECT * FROM a_patient WHERE pat_sw_id = ?");
 
+        if ($check_patient_table_query_1 && $check_patient_table_query_2) {
+            $check_patient_table_query_1->execute([$patient_id]);
+            $check_patient_table_query_2->execute([$patient_id]);
+
+            if ($check_patient_table_query_1->rowCount() > 0 && $check_patient_table_query_2->rowCount() > 0) {
+                while ($result1 = $check_patient_table_query_1->fetch(PDO::FETCH_ASSOC) && $result2 = $check_patient_table_query_2->fetch(PDO::FETCH_ASSOC)) {
+                    foreach ($result1 as $key1 => $val1) {
+                        foreach ($result2 as $key2 => $val2) {
+                            if ($key1 == $key2) {
+                                if ($val1 == $val2) {
+                                    continue;
+                                } else {
+                                    echo "Difference in $key1 --- Value 1 : $val1 | Value 2 : $val2\n";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+ 
         
+        /*if ($check_labor_table_query = $conn1->prepare("SELECT * FROM a_labor WHERE pat_sw_id = ?")) {
+            $check_labor_table_query->execute([$patient_id]);
+
+            while ($result = $check_labor_table_query->fetch(PDO::FETCH_ASSOC)) {
+                print_r($result);
+            }
+        }*/
+
+        //echo "\n\n\n\n";
     }
 
     
