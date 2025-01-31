@@ -4,7 +4,7 @@
         //$host = 'ihmzclin.mysql.db.internal';
         //$dbname = 'fire_heureka_credentials';
         //$dbname = 'ihmzclin_fireHeurekaCredentials';
-        $username = 'alex';
+        $username = 'debian';
         //$username = 'ihmzclin';
         $password = 'password';
         //$password = 'M1jTjJTXgnE?bFQW-cmz';
