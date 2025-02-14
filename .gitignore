@@ -9,6 +9,7 @@ venv/
 
 # Certificates
 resources/
+certificates/
 
 # python extra
 python/
