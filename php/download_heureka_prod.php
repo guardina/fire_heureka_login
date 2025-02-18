@@ -19,9 +19,7 @@ function download_data($praxis_name, $access_token, $user_id) {
         exit();
     }
 
-    //$start_time = microtime(true);
-    $time_file = 'time_log.txt';
-    file_put_contents($time_file, "Start Time: " . date("Y-m-d H:i:s") . PHP_EOL, LOCK_EX);
+    $start_time = microtime(true);
 
     configure_heureka($user_id, $ch);
 
@@ -29,13 +27,11 @@ function download_data($praxis_name, $access_token, $user_id) {
 
     if (isset($heureka_grants['PATIENT']) && in_array('READ', $heureka_grants['PATIENT'])) {
         $todayDate = date("Y-m-d");
-	$patients = get_patients_heureka($praxis_name, $user_id, $ch, $todayDate);
+	    $patients = get_patients_heureka($praxis_name, $user_id, $ch, $todayDate);
         //echo json_encode($patients);
-	file_put_contents($time_file, "End Time: " . date("Y-m-d H:i:s") . PHP_EOL, FILE_APPEND | LOCK_EX);
-
-	//$end_time = microtime(true);
-        //$execution_time = $end_time - $start_time;
-        //echo "Execution time: " . $execution_time . " seconds.";
+	    $end_time = microtime(true);
+        $execution_time = $end_time - $start_time;
+        echo "Execution time: " . $execution_time . " seconds.";
 
         curl_close($ch);
         exit();
@@ -259,7 +255,7 @@ function get_patients_heureka($praxis_name, $user_id, $ch, $todayDate) {
     curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
 
 
-    $numProcesses = 5;
+    $numProcesses = 10;
     $processes = [];
 
     $hasNextFile = 'has_next.txt';
@@ -271,7 +267,7 @@ function get_patients_heureka($praxis_name, $user_id, $ch, $todayDate) {
     while($has_next) {
 
         $has_next = trim(file_get_contents($hasNextFile));
-        if ($has_next == 'false') {
+        if ($has_next === 'false') {
             break;
         }
 
@@ -290,8 +286,8 @@ function get_patients_heureka($praxis_name, $user_id, $ch, $todayDate) {
         
             if ($pid == -1) {
                 die("Could not fork process $i\n");
-            } else if ($pid === 0) {
-		sleep(1);
+            } elseif ($pid === 0) {
+		        sleep(1); 
 
                 $fhir_endpoint = $_SESSION['fhirEndpoint'] ?? null;
 
@@ -328,13 +324,13 @@ function get_patients_heureka($praxis_name, $user_id, $ch, $todayDate) {
                 if (isset($bundle['entry'])) {
                     $entries = $bundle['entry'];
 
-                    $baseDirTemp = '/home/administrator/fire-heureka/production/full_download/' . $todayDate;
-                    $filePathTemp = $baseDirTemp . '/temp' . $i . '_' . $praxis_name  . '.json';
+                    $baseDirTemp = '/home/administrator/fire-heureka/test/full_download/' . $todayDate;
+                    $filePathTemp = $baseDirTemp . '/temp' . $i . '.json';
 
                     $fileObjTemp = fopen($filePathTemp, 'w');
 
                     foreach ($entries as $i => $patient) {
-                        echo "Patient [" . $your_offset+$i . "]\n";
+                        echo "Patient [" . $offset+$i . "]\n";
                         fwrite($fileObjTemp, json_encode($patient));
 
                         $elements_patient = get_elements_for_patient($patient['resource']['id'], $user_id, $uuid_v4, $context_type, $heureka_role, $ch);
@@ -347,12 +343,10 @@ function get_patients_heureka($praxis_name, $user_id, $ch, $todayDate) {
                             fwrite($fileObjTemp, ",");
                         }
                     }
-
                 } else {
                     return json_encode(["error" => "No patients found in response"]);
                 }
             } else {
-		echo "$response";
                 return json_encode([
                     "error" => "Request failed",
                     "status_code" => $http_code,
@@ -364,14 +358,13 @@ function get_patients_heureka($praxis_name, $user_id, $ch, $todayDate) {
         } else {
             $processes[] = $pid;
         }
-	}
 
         foreach ($processes as $process) {
             pcntl_waitpid($process, $status);
         }
 
         for ($i = 0; $i < $numProcesses; $i++) {
-            $tempFile = "full_download/$todayDate/temp$i_$praxis_name.json";
+            $tempFile = "full_download/$todayDate/temp$i.json";
             if (file_exists($tempFile)) {
                 $tempContent = file_get_contents($tempFile);
                 fwrite($fileObj, $tempContent);
@@ -380,11 +373,11 @@ function get_patients_heureka($praxis_name, $user_id, $ch, $todayDate) {
         }
 
         $start_offset += $offset * $numProcesses;
-
     }
+
     fwrite($fileObj, ']}');
     fclose($fileObj);
-    unlink($hasNextFile);
+    }
 }
 
 
@@ -418,7 +411,7 @@ function get_elements_for_patient($patient_id, $user_id, $uuid_v4, $context_type
             'https' => 'http://tunnel.heureka.health:7000'
         ];
 
-        foreach ($url_suffixes as $key => $suffix_data) {
+        foreach ($url_suffixes as $suffix_data) {
             $url_suffix = $suffix_data[0];
             $grants = $suffix_data[1];
             $method = $suffix_data[2];
@@ -463,12 +456,6 @@ function get_elements_for_patient($patient_id, $user_id, $uuid_v4, $context_type
 
         foreach ($curlHandles as $key => $temp_ch) {
             $responses[$key] = curl_multi_getcontent($temp_ch);
-
-	    $http_code = curl_getinfo($temp_ch, CURLINFO_HTTP_CODE);
-	    if ($http_code == 200) {
-		$successful_request = true;
-	    }
-
             curl_multi_remove_handle($multiHandle, $temp_ch);
             curl_close($temp_ch);
         }
@@ -476,16 +463,13 @@ function get_elements_for_patient($patient_id, $user_id, $uuid_v4, $context_type
         foreach (["Observation", "Condition", "MedicationStatement"] as $endpoint) {
             if (isset($responses[$endpoint])) {
                 $response_data = json_decode($responses[$endpoint], true);
-
-		//var_dump($response_data);
-
-                if (isset($response_data['entry']) && json_last_error() == JSON_ERROR_NONE) {
-                    $patient_info .= json_encode($response_data['entry']) . ",";
+                if (isset($response_data['entry'][0]) && json_last_error() == JSON_ERROR_NONE) {
+                    $patient_info .= json_encode($response_data['entry'][0]) . ",";
                 }
             }
         }
         
-        usleep(30000);
+        usleep(10000);
     }
 
     $patient_info = rtrim($patient_info, ",");
@@ -514,21 +498,21 @@ $stmt->execute();
 $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Currently in DB: 163, 167
-$to_download = [163, 167];
+$to_download = [167];
 
 foreach ($results as $row) {
     if (empty($to_download) || in_array($row['user_id'], $to_download)) {
-        //$pid = pcntl_fork();
+        $pid = pcntl_fork();
 
-        //if ($pid == -1) {
-        //    die("Failed");
-        //} else if ($pid) {
-        //    continue;
-        //} else {
+        if ($pid == -1) {
+            die("Failed");
+        } else if ($pid) {
+            continue;
+        } else {
             //print_r($row);
             download_data($row['praxis_name'], $row['access_token'], $row['user_id']);
-        //    exit(0);
-        //}
+            exit(0);
+        }
         
     }
 }
