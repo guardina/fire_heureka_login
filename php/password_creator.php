@@ -19,7 +19,7 @@ function hash_password($password) {
     return password_hash($password, PASSWORD_BCRYPT);
 }
 
-$num_users = 500;
+$num_users = 0;
 
 $data = [];
 foreach (range(1000, 1000+$num_users) as $i) {
@@ -33,6 +33,11 @@ foreach (range(1000, 1000+$num_users) as $i) {
         'hashed_password' => $hashed_password
     ];
 }
+
+$pw = 'axe_pw';
+$h_pw = hash_password($pw);
+echo "pw: $h_pw\n";
+
 
 echo "Generated SQL Queries:\n\n";
 foreach ($data as $entry) {
