@@ -1,11 +1,22 @@
 <?php
     include "db.php";
 
-    $db1name = 'fire5_test';   // Fabio
-    $db2name = 'fire5_vito_new';     // Heureka
+    // WORK
+    //$db1name = 'fire5_test';   // Fabio
+    //$db2name = 'fire5_vito_new';     // Heureka
+
+    // HOME
+    $db1name = 'fire5_big_vitomed';   // Fabio
+    $db2name = 'fire5_small_vitomed';     // Heureka
 
     $conn1 = get_db_connection($db1name);
     $conn2 = get_db_connection($db2name);
+
+    $conn1->query("SET SESSION group_concat_max_len = 1000000;");
+
+    $threshold = 100;
+
+
 
     $query = 
     "   SELECT 
@@ -37,7 +48,7 @@
             GROUP BY birth_year, LOWER(sex), pat_sw_id
         ) AS combined
         GROUP BY birth_year, sex
-        HAVING count_small_vitomed BETWEEN 0 AND 50 AND count_big_vitomed BETWEEN 0 AND 50
+        HAVING count_small_vitomed <= $threshold AND count_big_vitomed <= $threshold
         ORDER BY birth_year ASC, sex ASC;
     ";
 
@@ -48,20 +59,13 @@
     $patient_ids = $get_patient_ids->fetchAll(PDO::FETCH_ASSOC);
 
 
-    $tableTimeNames = [
-        "a_vital" => ["db1_columns" => ["vital_dtime", "bmi", "bp_diast", "bp_syst"], "db2_columns" => ["vital_dtime", "bmi", "bp_diast", "bp_syst"]],
-        /*"a_labor" => ["db1_columns" => ["measure_dtime", "lab_label", "lab_value"], "db2_columns" => ["lab_dtime", "lab_label", "lab_value"]],*/
-        "a_medi" => ["db1_columns" => ["start_dtime", "gtin"], "db2_columns" => ["start_dtime", "gtin"]],
-        /*"a_pdlist" => ["db1_columns" => ["pd_start_dtime", "description"], "db2_columns" => ["pd_start_dtime", "description"]]*/
-    ];
-
-
     $total_matches = 0;
     $total_patients = 0;
     $patients_small = 0;
     $patients_big = 0;
     $match_threshold = 0.1;
     $matching_pairs = [];
+    $matching_results = ["a_labor" => [], "a_medi" => [], "a_vital" => []];
 
     //foreach ($tableTimeNames as $tableName => $dateColumnName) {
         //echo "$tableName\n";
@@ -69,224 +73,182 @@
         foreach ($patient_ids as $entry) {
             echo "Sex: " . $entry["sex"] . "          Birth year: " . $entry["birth_year"] . "\n";
             echo "-------------------------------------------------------------------------------------\n";
-            compareTable($entry);
+            compareTableGeneral($entry);
             echo "-------------------------------------------------------------------------------------\n";
         }
         //echo "\n\n\n";
     //}
 
 
+    $vital_matches = 0;
+    $medi_matches = 0;
+    $labor_matches = 0;
+
+
+    echo "\n\nMATCHES:\n";
+    foreach ($matching_results as $table => $results) {
+        echo "$table\n";
+        foreach ($results as $ids) {
+            $id1 = $ids[0];
+            $id2 = $ids[1];
+    
+            $pair_key = $id1 < $id2 ? "$id1-$id2" : "$id2-$id1";
+    
+            if (!isset($unique_pairs[$pair_key])) {
+                if ($table == 'a_vital') {
+                    $vital_matches += 1; 
+                } else if ($table == 'a_medi') {
+                    $medi_matches += 1;
+                } else if ($table == 'a_labor') {
+                    $labor_matches += 1;
+                }
+                $unique_pairs[$pair_key] = true;
+                $total_matches++;
+
+                echo "$id1 <--> $id2\n";
+            }
+        } 
+    }
+
+    echo "\n\n";
+
+
+
 
     echo "\n\n";
     echo "TOTAL MATCHES: " . $total_matches . "\n";
-    echo "PATIENTS 1: " . $patients_small . "\n";
-    echo "PATIENTS 2: " . $patients_big . "\n";
+    echo "VITAL MATCHES: " . $vital_matches . "\n";
+    echo "MEDI MATCHES: " . $medi_matches . "\n";
+    echo "LABOR MATCHES: " . $labor_matches . "\n";
+    echo "PATIENTS Fabio: " . $patients_big . "\n";
+    echo "PATIENTS Heureka: " . $patients_small . "\n";
     echo "TOTAL PATIENTS: " . $total_patients . "\n";
 
 
-    /*echo "\n\nMATCHES:\n";
-    foreach ($matching_pairs as $ids) {
-        $id1 = $ids[0];
-        $id2 = $ids[1];
-
-        echo $id1 . " <--> " . $id2 . "\n"; 
-    }*/
-    
-
-    echo "\n\n";
 
 
-
-
-    function compareTable($entry) {
+    function compareTableGeneral($entry) {
         global $conn1, $conn2;
         global $total_matches, $total_patients, $patients_small, $patients_big, $match_threshold, $matching_pairs;
-        global $tableTimeNames;
         global $db1name, $db2name;
+        global $matching_results;
+    
+        $tableTimeNames = [
+            /*"a_medi" => ["db1_columns" => ["start_dtime", "gtin"], "db2_columns" => ["start_dtime", "gtin"]],
+            "a_vital" => ["db1_columns" => ["vital_dtime", "bmi", "bp_diast", "bp_syst"], "db2_columns" => ["vital_dtime", "bmi", "bp_diast", "bp_syst"]],*/
+            "a_labor" => ["db1_columns" => ["measure_dtime", "lab_label", "lab_value"], "db2_columns" => ["lab_dtime", "lab_label", "lab_value"]],
+        ];
     
         $pat_sw_ids_small_vitomed = explode(',', $entry['pat_sw_ids_small_vitomed']);
         $pat_sw_ids_big_vitomed = explode(',', $entry['pat_sw_ids_big_vitomed']);
         $patients_small += count($pat_sw_ids_small_vitomed);
         $patients_big += count($pat_sw_ids_big_vitomed);
         $total_patients += max(count($pat_sw_ids_small_vitomed), count($pat_sw_ids_big_vitomed));
+         
     
-        $results_db1 = [];
-        $similarity_table = [];
-    
-        foreach ($tableTimeNames as $tableName => $dateColumnName) {
-            echo "Processing Table: $tableName\n";
-    
-            echo "FABIO\n";
+        foreach ($tableTimeNames as $tableName => $columns) {
+            $results_db1 = [];
+            $similarity_table = [];
             foreach ($pat_sw_ids_big_vitomed as $pat_sw_id) {
-                echo "$pat_sw_id\n";
                 $similarity_table[$pat_sw_id] = 0;
     
-                $columns = $dateColumnName["db1_columns"];
-                
-                $big_query = "
-                    SELECT " . implode(", ", $columns) . " FROM $db1name.$tableName WHERE pat_sw_id = :pat_sw_id;
-                ";
-                
-                $stmt_small = $conn1->prepare($big_query);
-                $stmt_small->execute(['pat_sw_id' => $pat_sw_id]);
-                $results = $stmt_small->fetchAll(PDO::FETCH_ASSOC);
-    
-                if ($results) {
-                    foreach ($results as $result) {
-
-                        $results_db1[$pat_sw_id][$columns[0]][] = $result[$columns[0]];
-    
-                        if (isset($columns[1]) && $tableName == 'a_medi') {
-                            $result[$columns[1]] = explode(" ", $result[$columns[1]])[0];
-                            //$results_db1[$pat_sw_id][$columns[1]][] = $result[$columns[1]];
-                        }
-                        $results_db1[$pat_sw_id][$columns[1]][] = $result[$columns[1]];
-                        if ($tableName == 'a_vital') {
-                            $results_db1[$pat_sw_id][$columns[2]][] = $result[$columns[2]];
-                            $results_db1[$pat_sw_id][$columns[3]][] = $result[$columns[3]];
-                        }
-                        
-    
-                        //echo implode(": ", array_map(fn($col) => "$col: " . $result[$col], $columns)) . "\n";
-                    }
-                }
-            }
-
-
-            //var_dump($results_db1);
-            echo "\nHEUREKA\n";
-    
-            foreach ($pat_sw_ids_small_vitomed as $pat_sw_id) {
-                echo "$pat_sw_id\n";
-    
-                foreach ($similarity_table as $name => $value) {
-                    $similarity_table[$name] = 0;
-                }
-    
-                $columns = $dateColumnName["db2_columns"];
-    
-                $small_query = "
-                    SELECT " . implode(", ", $columns) . " FROM $db2name.$tableName WHERE pat_sw_id = :pat_sw_id;
-                ";
-    
-                $stmt_big = $conn2->prepare($small_query);
+                $big_query = "SELECT " . implode(", ", $columns["db1_columns"]) . " FROM $db1name.$tableName WHERE pat_sw_id = :pat_sw_id;";
+                $stmt_big = $conn1->prepare($big_query);
                 $stmt_big->execute(['pat_sw_id' => $pat_sw_id]);
                 $results = $stmt_big->fetchAll(PDO::FETCH_ASSOC);
     
                 if ($results) {
-                    $tot_entries = count($results);
                     foreach ($results as $result) {
-                        foreach ($columns as $column) {
-                            if ($tableName == 'a_medi') {
-                                if ($column == $columns[1] && isset($result[$column])) {
-                                    $result[$column] = explode(" ", $result[$column])[0];
-                                }
-                            }
-                        }
-    
-                        //echo implode(": ", array_map(fn($col) => "$col: " . $result[$col], $columns)) . "\n";
-    
-                        foreach ($results_db1 as $other_pat_sw_id => $infos) {
-
-                            /*if ($tableName == 'a_vital') {
-                                var_dump($infos);
-                            }*/
-                            if (isset($infos[$columns[0]])) {
-                                $dates = $infos[$columns[0]];
-                            } else {
-                                $dates = [];
-                            }
-
-                            if (isset($columns[1])) {
-                                $medi_labels = isset($infos[$columns[1]]) ? $infos[$columns[1]] : [];
-                                $medi_label = isset($result[$columns[1]]) ? $result[$columns[1]] : null;
-                            } else {
-                                $medi_labels = [];
-                                $medi_label = null;
-                            }
-
-                            if ($tableName == 'a_vital') {
-                                if (isset($columns[2])) {
-                                    $medi_labels2 = isset($infos[$columns[2]]) ? $infos[$columns[2]] : [];
-                                    $medi_label2 = isset($result[$columns[2]]) ? $result[$columns[2]] : null;
-                                } else {
-                                    $medi_labels2 = [];
-                                    $medi_label2 = null;
-                                }
-
-                                if (isset($columns[3])) {
-                                    $medi_labels3 = isset($infos[$columns[3]]) ? $infos[$columns[3]] : [];
-                                    $medi_label3 = isset($result[$columns[3]]) ? $result[$columns[3]] : null;
-                                } else {
-                                    $medi_labels3 = [];
-                                    $medi_label3 = null;
-                                }
-                            }
-
-
-                        
-                            $datetime = new DateTime($result[$columns[0]]);
-                            $formatted_datetime = $datetime->format('Y-m-d H:i:s');
-                        
-                            $datetime_minus_1 = clone $datetime;
-                            $datetime_minus_1->modify('-1 hour');
-                            $formatted_datetime_minus_1 = $datetime_minus_1->format('Y-m-d H:i:s');
-                        
-                            $datetime_minus_2 = clone $datetime;
-                            $datetime_minus_2->modify('-2 hours');
-                            $formatted_datetime_minus_2 = $datetime_minus_2->format('Y-m-d H:i:s');
-                        
-                            if (count($columns) == 1) {
-                                
-                                for ($i = 0; $i < count($dates); $i++) {
-                                    if ($formatted_datetime == $dates[$i] || $formatted_datetime_minus_1 == $dates[$i] || $formatted_datetime_minus_2 == $dates[$i]) {
-                                        $similarity_table[$other_pat_sw_id] += 1;
-                                        break;
-                                    }
-                                }
-                            } else if (count($columns) > 1) {
-
-                                for ($i = 0; $i < count($dates); $i++) {
-                                    if (($formatted_datetime == $dates[$i] || $formatted_datetime_minus_1 == $dates[$i] || $formatted_datetime_minus_2 == $dates[$i]) &&
-                                        $medi_label == $medi_labels[$i]) {
-                                        $similarity_table[$other_pat_sw_id] += 1;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-    
-                    echo "\n\n";
-    
-                    foreach ($results_db1 as $other_pat_sw_id => $infos) {
-    
-                        if ($tot_entries == 0) {
-                            $similarity_probability = 0;
-                        } else {
-                            $similarity_probability = ($similarity_table[$other_pat_sw_id] / $tot_entries);
-                        }
-                        
-                        echo $similarity_table[$other_pat_sw_id] . " --> " . $tot_entries . "\n";
-                        echo "Similarity [" . $pat_sw_id . "] <--> [" . $other_pat_sw_id . "]: " . $similarity_probability . "\n";
-    
-                        if (count($dates) == 0) {
-                            $coverage_rate = 0;
-                        } else {
-                            $coverage_rate = ($similarity_table[$other_pat_sw_id] / count($dates));
-                        }
-                        
-                        echo $similarity_table[$other_pat_sw_id] . " --> " . count($dates) . "\n";
-                        echo "Coverage [" . $pat_sw_id . "] <--> [" . $other_pat_sw_id . "]: " . $coverage_rate . "\n";
-    
-                        if ($similarity_probability >= $match_threshold) {
-                            $total_matches += 1;
-                            $matching_pairs[] = [$pat_sw_id, $other_pat_sw_id];
+                        foreach ($columns["db1_columns"] as $col) {
+                            $results_db1[$pat_sw_id][$col][] = $result[$col] ?? null;
                         }
                     }
                 }
             }
-            echo "\n\n\n";
+
+            /*if ($tableName == 'a_labor') {
+                echo "START\n\n";
+                var_dump($results_db1);
+                echo "\n\n";
+            }*/
+
+            foreach ($pat_sw_ids_small_vitomed as $pat_sw_id) {
+                foreach ($similarity_table as $name => $value) {
+                    $similarity_table[$name] = 0;
+                }
+    
+                $small_query = "SELECT " . implode(", ", $columns["db2_columns"]) . " FROM $db2name.$tableName WHERE pat_sw_id = :pat_sw_id;";
+                $stmt_small = $conn2->prepare($small_query);
+                $stmt_small->execute(['pat_sw_id' => $pat_sw_id]);
+                $results = $stmt_small->fetchAll(PDO::FETCH_ASSOC);
+    
+                if ($results) {
+                    $tot_entries = count($results);
+                    foreach ($results as $result) {
+                        foreach ($results_db1 as $other_pat_sw_id => $infos) {
+                            $datetime = new DateTime($result[$columns["db2_columns"][0]]);
+                            $formatted_datetime = $datetime->format('Y-m-d H:i:s');
+                            $formatted_datetime_minus_1 = $datetime->modify('+1 hour')->format('Y-m-d H:i:s');
+                            $formatted_datetime_minus_2 = $datetime->modify('+2 hours')->format('Y-m-d H:i:s');
+    
+                            $dates = $infos[$columns["db1_columns"][0]] ?? [];
+                            $match_found = false;
+    
+                            foreach ($dates as $i => $date) {
+                                if ($formatted_datetime == $date || $formatted_datetime_minus_1 == $date || $formatted_datetime_minus_2 == $date) {
+                                    if ($tableName == "a_medi") {
+                                        if ($result[$columns["db2_columns"][1]] == ($infos[$columns["db1_columns"][1]][$i] ?? null)) {
+                                            $similarity_table[$other_pat_sw_id] += 1;
+                                            $match_found = true;
+                                        }
+                                    } elseif ($tableName == "a_vital") {
+                                        $bmi_match = ($result["bmi"] ?? null) == ($infos["bmi"][$i] ?? null) && $result["bmi"] !== null;
+                                        $bp_diast_match = ($result["bp_diast"] ?? null) == ($infos["bp_diast"][$i] ?? null) && $result["bp_diast"] !== null;
+                                        $bp_syst_match = ($result["bp_syst"] ?? null) == ($infos["bp_syst"][$i] ?? null) && $result["bp_syst"] !== null;
+
+                                        if ($bmi_match || $bp_diast_match || $bp_syst_match) {
+                                            $similarity_table[$other_pat_sw_id] += 1;
+                                            $match_found = true;
+                                        }
+                                    } elseif ($tableName == "a_labor") {
+                                        if ($result["lab_label"] != 'P-LCC' && $infos["lab_label"][$i] != 'P-LCR') {
+                                            echo $result["lab_label"] . " ------> " . $infos["lab_label"][$i] . "\n";
+                                            echo $result["lab_value"] . " ------> " . $infos["lab_value"][$i] . "\n";
+                                            echo "\n";
+                                        }
+                                        $label_match = ($result["lab_label"] ?? null) == ($infos["lab_label"][$i] ?? null) && $result["lab_label"] !== null;
+                                        $value_match = ($result["lab_value"] ?? null) == ($infos["lab_value"][$i] ?? null) && $result["lab_value"] !== null;
+
+                                        if ($label_match && $value_match) {
+                                            $similarity_table[$other_pat_sw_id] += 1;
+                                            $match_found = true;
+                                        }
+
+                                    }
+                                    if ($match_found) break;
+                                }
+                            }
+                        }
+                    }
+    
+                    foreach ($results_db1 as $other_pat_sw_id => $infos) {
+                        $similarity_probability = $tot_entries == 0 ? 0 : ($similarity_table[$other_pat_sw_id] / $tot_entries);
+                        $coverage_rate = count($infos[$columns["db1_columns"][0]] ?? []) == 0 ? 0 : ($similarity_table[$other_pat_sw_id] / count($infos[$columns["db1_columns"][0]]));
+    
+                        if ($similarity_probability >= $match_threshold) {
+                            $matching_pairs[] = [$pat_sw_id, $other_pat_sw_id];
+                            if ($tableName == 'a_vital') {
+                                $matching_results['a_vital'][] = [$pat_sw_id, $other_pat_sw_id];
+                            } else if ($tableName == 'a_medi') {
+                                $matching_results['a_medi'][] = [$pat_sw_id, $other_pat_sw_id];
+                            } else if ($tableName == 'a_labor') {
+                                $matching_results['a_labor'][] = [$pat_sw_id, $other_pat_sw_id];
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
+    
     
