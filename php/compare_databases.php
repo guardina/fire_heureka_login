@@ -171,9 +171,9 @@
     echo "PATIENTS Fire5: " . $patients_big . "\n";
     echo "PATIENTS Heureka: " . $patients_small . "\n";
     echo "TOTAL MATCHES: " . $total_matches . "\n";
-    echo "VITAL MATCHES: " . $vital_matches . "\n";
-    echo "MEDI MATCHES: " . $medi_matches . "\n";
-    echo "LABOR MATCHES: " . $labor_matches . "\n";
+    echo "PATIENTS FOUND THANKS TO VITAL: " . $vital_matches . "\n";
+    echo "PATIENTS FOUND THANKS TO  MEDI: " . $medi_matches . "\n";
+    echo "PATIENTS FOUND THANKS TO  LABOR: " . $labor_matches . "\n";
     
 
     $sheet = $spreadsheet->createSheet();
