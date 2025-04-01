@@ -117,7 +117,7 @@
         $stmt->execute();
         $total_entries_db1 = $stmt->fetchColumn();
 
-        $match_counts[$table]['total_entries'] += (int)$total_entries_db2;
+        $match_counts[$table]['total_entries'] += (int)$total_entries_db1;
 
         echo "$table\n";
         $row = 2;
@@ -202,6 +202,8 @@
 
     //echo "Excel file 'matches.xlsx' has been generated successfully!\n";
 
+
+    ///////// <-----------------------------------------------------
     foreach ($match_counts as $table => $numbers) {
         echo "Matches $table: " . $numbers['matches'] . " / " . $numbers['total_entries'] . "\n";
     }
