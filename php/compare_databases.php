@@ -95,6 +95,7 @@
 
     $spreadsheet = new Spreadsheet();
 
+    $lab_matches = [];
 
     echo "\n\nMATCHES:\n";
     foreach ($matching_results as $table => $results) {
@@ -167,6 +168,7 @@
 
                 //echo "$id1 <--> $id2 SIMILARITY: $sim_prob, COVERAGE: $coverage_rate\n";
                 $present_matches[] = $id1;
+                $lab_matches[] = $id1 . "  " . $id2;
             }
 
             $sheet->setCellValue("A$row", $id2);
@@ -302,7 +304,7 @@
     writeToFile("files/notmatches1.txt", $matched_ids1);
 
     
-
+    writeToFile("files/lab_matches", $lab_matches);
 
 
 
@@ -418,11 +420,11 @@
                                         }
                                     } elseif ($tableName == "a_labor") {
                                         $label_match = ($result["lab_label"] ?? null) == ($infos["lab_label"][$i] ?? null) && $result["lab_label"] !== null;
-                                        $value_match = ($result["lab_value"] ?? null) == ($infos["lab_value"][$i] ?? null) && $result["lab_value"] !== null;
+                                        //$value_match = ($result["lab_value"] ?? null) == ($infos["lab_value"][$i] ?? null) && $result["lab_value"] !== null;
                                         if ($label_match && strpos($result["lab_label"], "Nicht zuordenbare") !== false) {
                                             $similarity_table[$other_pat_sw_id] += 1;
                                             $match_found = true;
-                                        } else if ($label_match && $value_match) {
+                                        } else if ($label_match /*&& $value_match*/) {
                                             $similarity_table[$other_pat_sw_id] += 1;
                                             $match_found = true;
                                         }
