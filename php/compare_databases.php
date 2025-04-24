@@ -6,12 +6,12 @@
     use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
     // WORK
-    //$db1name = 'fire5_test';   // Fabio
-    //$db2name = 'fire5_vito_new';     // Heureka
+    $db1name = 'fire5_test';   // Fabio
+    $db2name = 'fire5_vito_new';     // Heureka
 
     // HOME
-    $db1name = 'fire5_big_vitomed';   // Fabio
-    $db2name = 'fire5_small_vitomed';     // Heureka
+    //$db1name = 'fire5_big_vitomed';   // Fabio
+    //$db2name = 'fire5_small_vitomed';     // Heureka
 
     $conn1 = get_db_connection($db1name);
     $conn2 = get_db_connection($db2name);
@@ -37,7 +37,7 @@
                 COUNT(*) AS patient_count,
                 pat_sw_id
             FROM $db2name.a_patient
-            WHERE birth_year IS NOT NULL AND sex IS NOT NULL AND pms_name = 'heureka_vitomed'
+            WHERE birth_year IS NOT NULL AND sex IS NOT NULL AND pms_name = 'heureka'
             GROUP BY birth_year, LOWER(sex), pat_sw_id
 
             UNION ALL
@@ -168,7 +168,9 @@
 
                 //echo "$id1 <--> $id2 SIMILARITY: $sim_prob, COVERAGE: $coverage_rate\n";
                 $present_matches[] = $id1;
-                $lab_matches[] = $id1 . "  " . $id2;
+                if ($table == 'a_labor') {
+                    $lab_matches[] = $id1 . "  " . $id2;
+                }
             }
 
             $sheet->setCellValue("A$row", $id2);
@@ -420,11 +422,11 @@
                                         }
                                     } elseif ($tableName == "a_labor") {
                                         $label_match = ($result["lab_label"] ?? null) == ($infos["lab_label"][$i] ?? null) && $result["lab_label"] !== null;
-                                        //$value_match = ($result["lab_value"] ?? null) == ($infos["lab_value"][$i] ?? null) && $result["lab_value"] !== null;
+                                        $value_match = ($result["lab_value"] ?? null) == ($infos["lab_value"][$i] ?? null) && $result["lab_value"] !== null;
                                         if ($label_match && strpos($result["lab_label"], "Nicht zuordenbare") !== false) {
                                             $similarity_table[$other_pat_sw_id] += 1;
                                             $match_found = true;
-                                        } else if ($label_match /*&& $value_match*/) {
+                                        } else if ($label_match/* && $value_match*/) {
                                             $similarity_table[$other_pat_sw_id] += 1;
                                             $match_found = true;
                                         }
