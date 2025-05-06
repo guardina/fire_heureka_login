@@ -6,12 +6,12 @@
     use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
     // WORK
-    //$db1name = 'fire5_test';   // Fabio
-    //$db2name = 'fire5_vito_new';     // Heureka
+    $db1name = 'fire5_test';   // Fabio
+    $db2name = 'fire5_vito_new';     // Heureka
 
     // HOME
-    $db1name = 'fire5_big_vitomed';   // Fabio
-    $db2name = 'fire5_small_vitomed';     // Heureka
+    //$db1name = 'fire5_big_vitomed';   // Fabio
+    //$db2name = 'fire5_small_vitomed';     // Heureka
 
     $conn1 = get_db_connection($db1name);
     $conn2 = get_db_connection($db2name);
@@ -37,7 +37,7 @@
                 COUNT(*) AS patient_count,
                 pat_sw_id
             FROM $db2name.a_patient
-            WHERE birth_year IS NOT NULL AND sex IS NOT NULL AND pms_name = 'heureka_vitomed'
+            WHERE birth_year IS NOT NULL AND sex IS NOT NULL AND pms_name = 'heureka'
             GROUP BY birth_year, LOWER(sex), pat_sw_id
 
             UNION ALL
@@ -376,11 +376,11 @@
         global $db1name, $db2name;
         global $matching_results;
     
-            $tableTimeNames = [
-                "a_medi" => ["db1_columns" => ["start_dtime", "gtin"], "db2_columns" => ["start_dtime", "gtin"]],
-                "a_vital" => ["db1_columns" => ["vital_dtime", "bmi", "bp_diast", "bp_syst", "pulse", "height", "weight", "body_temp"], "db2_columns" => ["vital_dtime", "bmi", "bp_diast", "bp_syst", "pulse", "height", "weight", "body_temp"]],
-                "a_labor" => ["db1_columns" => ["measure_dtime", "lab_label", "lab_value"], "db2_columns" => ["lab_dtime", "lab_label", "lab_value"]],
-            ];
+        $tableTimeNames = [
+            "a_medi" => ["db1_columns" => ["start_dtime", "gtin"], "db2_columns" => ["start_dtime", "gtin"]],
+            "a_vital" => ["db1_columns" => ["vital_dtime", "bmi", "bp_diast", "bp_syst", "pulse", "height", "weight", "body_temp"], "db2_columns" => ["vital_dtime", "bmi", "bp_diast", "bp_syst", "pulse", "height", "weight", "body_temp"]],
+            "a_labor" => ["db1_columns" => ["measure_dtime", "lab_label", "lab_value"], "db2_columns" => ["lab_dtime", "lab_label", "lab_value"]],
+        ];
     
         $pat_sw_ids_small_vitomed = explode(',', $entry['pat_sw_ids_small_vitomed']);
         $pat_sw_ids_big_vitomed = explode(',', $entry['pat_sw_ids_big_vitomed']);
@@ -474,6 +474,14 @@
 
                             $matching_entries = $similarity_table[$other_pat_sw_id];
                             $other_tot_entries = count($infos[$columns["db1_columns"][0]]);
+
+                            $get_other_tot_query = "SELECT DISTINCT lab_label, lab_value, measure_dtime FROM a_labor WHERE pat_sw_id = :pat_sw_id";
+                            $stmt_other_tot = $conn1->prepare($get_other_tot_query);
+                            $stmt_other_tot->execute(['pat_sw_id' => $other_pat_sw_id]);
+                            $other_tot_result = $stmt_other_tot->fetchAll(PDO::FETCH_ASSOC);
+                            if ($other_tot_result) {
+                                echo "-------->TOT: " . count($other_tot_result) . " + $other_pat_sw_id\n";
+                            }
         
                             if ($similarity_probability >= $match_threshold) {
                                 $matching_pairs[] = [$pat_sw_id, $other_pat_sw_id];
