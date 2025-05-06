@@ -6,12 +6,12 @@
     use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
     // WORK
-    $db1name = 'fire5_test';   // Fabio
-    $db2name = 'fire5_vito_new';     // Heureka
+    //$db1name = 'fire5_test';   // Fabio
+    //$db2name = 'fire5_vito_new';     // Heureka
 
     // HOME
-    //$db1name = 'fire5_big_vitomed';   // Fabio
-    //$db2name = 'fire5_small_vitomed';     // Heureka
+    $db1name = 'fire5_big_vitomed';   // Fabio
+    $db2name = 'fire5_small_vitomed';     // Heureka
 
     $conn1 = get_db_connection($db1name);
     $conn2 = get_db_connection($db2name);
@@ -37,7 +37,7 @@
                 COUNT(*) AS patient_count,
                 pat_sw_id
             FROM $db2name.a_patient
-            WHERE birth_year IS NOT NULL AND sex IS NOT NULL AND pms_name = 'heureka'
+            WHERE birth_year IS NOT NULL AND sex IS NOT NULL AND pms_name = 'heureka_vitomed'
             GROUP BY birth_year, LOWER(sex), pat_sw_id
 
             UNION ALL
@@ -149,6 +149,21 @@
             $total_entries_db1 += $other_tot_entries;
             $total_entries_db2 += $tot_entries;
             $total_match += $match_count;
+
+            echo $id1 . "\n";
+
+
+            $tot_entries_query = "SELECT COUNT(*) AS total FROM a_labor WHERE pat_sw_id = :pat_sw_id";
+            $tot_entries_conn = $conn2->prepare($tot_entries_query);
+            $tot_entries_conn->execute(['pat_sw_id' => $id1]);
+            $res_total = $tot_entries_conn->fetch(PDO::FETCH_ASSOC);
+            $tot_entries = $res_total['total'];
+
+            $other_tot_entries_query = "SELECT COUNT(*) AS total FROM a_labor WHERE pat_sw_id = :pat_sw_id";
+            $other_tot_entries_conn = $conn1->prepare($other_tot_entries_query);
+            $other_tot_entries_conn->execute(['pat_sw_id' => $id2]);
+            $other_res_total = $other_tot_entries_conn->fetch(PDO::FETCH_ASSOC);
+            $other_tot_entries = $other_res_total['total'];
     
             //$pair_key = $id1 < $id2 ? "$id1-$id2" : "$id2-$id1";
             $key = $id1;
@@ -194,6 +209,19 @@
 
             $row++;
         } 
+
+
+        /*$total_entries_db1_query = "SELECT COUNT(*) AS total FROM a_labor";
+        $total_entries_db1_conn = $conn1->prepare($total_entries_db1_query);
+        $total_entries_db1_conn->execute();
+        $res_total = $total_entries_db1_conn->fetch(PDO::FETCH_ASSOC);
+        $total_entries_db1 = $res_total['total'];
+
+        $total_entries_db2_query = "SELECT COUNT(*) AS total FROM a_labor";
+        $total_entries_db2_conn = $conn2->prepare($total_entries_db2_query);
+        $total_entries_db2_conn->execute();
+        $res_total = $total_entries_db1_conn->fetch(PDO::FETCH_ASSOC);
+        $total_entries_db2 = $res_total['total'];*/
 
         $sheet->setCellValue("C$row", $total_entries_db1);
         $sheet->setCellValue("D$row", $total_entries_db2);

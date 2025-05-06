@@ -2,12 +2,12 @@
     include "db.php";
 
     // WORK
-    $db1name = 'fire5_vito_new';
-    $db2name = 'fire5_test';
+    //$db1name = 'fire5_vito_new';
+    //$db2name = 'fire5_test';
 
     // HOME
-    //$db1name = 'fire5_small_vitomed';
-    //$db2name = 'fire5_big_vitomed';
+    $db1name = 'fire5_small_vitomed';
+    $db2name = 'fire5_big_vitomed';
 
     $conn1 = get_db_connection($db1name);
     $conn2 = get_db_connection($db2name);
@@ -28,8 +28,8 @@
     }
     
     
-    analyse_labor($db1name, $db2name);
-    //analyse_labor($db2name, $db1name);
+    analyse_labor($db1name, $db2name, 'heureka');
+    //analyse_labor($db2name, $db1name, 'fire5');
 
 
 
@@ -37,7 +37,7 @@
 
 
 
-    function analyse_labor($db1name, $db2name) {
+    function analyse_labor($db1name, $db2name, $firstDB) {
 
         global $conn1, $conn2;
         global $firstValues, $secondValues;
@@ -49,7 +49,7 @@
 
         for ($i = 0; $i < count($firstValues); $i++) {
 
-            if ($db1name == 'fire5_vito_new') {
+            if ($firstDB == 'heureka') {
                 $db1_query = "SELECT pat_sw_id, lab_label, lab_value, lab_dtime FROM $db1name.a_labor WHERE pat_sw_id = :pat_sw_id";
                 $db2_query = "SELECT pat_sw_id, lab_label, lab_value, measure_dtime FROM $db2name.a_labor WHERE pat_sw_id = :pat_sw_id";
 
@@ -110,7 +110,7 @@
                     $year = $db1_dt->format('Y');
                     $missing_per_year[$year]++;
 
-                    if (str_contains($value_1['lab_label'], "Laborbefund")) {
+                    if (str_contains($value_1['lab_label'], "Filtrationsrate")) {
                         $sniper_count++;
                     }
                 }
@@ -126,7 +126,7 @@
             echo "MISSING YEAR " . $year . ": " . $missing . "\n";
         }
 
-        echo "MISSING C-reaktives Protein: " . $sniper_count . "\n";
+        echo "MISSING Sniped: " . $sniper_count . "\n";
     }
     
     
