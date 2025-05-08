@@ -26,70 +26,56 @@
 
 
 
-
-
-
-
-
     function writeOnExcel() {
         global $conn1, $conn2;
-        $sheetName = "a_labor";
-        $startingRow = 3237;
 
-        $table = "a_labor"; // Change to the desired table
-        $pat_sw_id = "0Ut9KyDRnTgdNCsVlXAOrw=="; // Replace with the actual patient ID
+        $startingRow = 51;
+
+        $table = "a_medi"; // Change to the desired table
+        $pat_sw_id = "QiB77LVBaTIzzwKw4sRWzg=="; // Replace with the actual patient ID
+        $sheet_name = "MediExamplesHeureka";
     
         $patientData = getPatientData($conn2, $table, $pat_sw_id);
     
-        $filePath = 'files/matches.xlsx';  // Specify the path to the existing Excel file
+        $filePath = 'files/matches.xlsx';
     
         try {
-            // Load the existing Excel file
             $spreadsheet = IOFactory::load($filePath);
     
-            // Check if the sheet exists, otherwise create a new one
-            $sheet = $spreadsheet->getSheetByName($table);
+            $sheet = $spreadsheet->getSheetByName($sheet_name);
     
             if (!$sheet) {
-                // If the sheet doesn't exist, create a new sheet with the specified name
                 $sheet = $spreadsheet->createSheet();
-                $sheet->setTitle($sheetName);
+                $sheet->setTitle($sheet_name);
             }
-    
-            // If there is patient data, proceed to write it to the Excel file
+
             if (!empty($patientData)) {
-                // Get column names from the first data entry
-                $columns = array_keys($patientData[0]);  // Get the column names from the first data entry
+                $columns = array_keys($patientData[0]);
     
-                // Write column headers only if they don't exist in the sheet
-                $maxRow = $sheet->getHighestRow();  // Get the highest row (to check where to start)
+                $maxRow = $sheet->getHighestRow();
     
-                // If the sheet is empty or headers are missing, add the headers
-                $colIndex = 1; // Start with column A (1)
+                $colIndex = 13;
                 foreach ($columns as $col) {
                     $sheet->setCellValue([$colIndex, $startingRow], $col);
                     //$sheet->setCellValueByColumnAndRow($colIndex, $startingRow, $col);
                     $colIndex++;
                 }
-                $startingRow++;  // Move to the next row after header
+                $startingRow++;
     
-                // Write data rows starting from the specified row
-                $rowIndex = $startingRow;  // Start from the row after the header
+                $rowIndex = $startingRow;
                 foreach ($patientData as $row) {
-                    $colIndex = 1; // Reset column index for each row
+                    $colIndex = 13;
                     foreach ($row as $value) {
-                        $sheet->setCellValue([$colIndex, $rowIndex], $value);
-                        //$sheet->setCellValueByColumnAndRow($colIndex, $rowIndex, $value); 
+                        $sheet->setCellValue([$colIndex, $rowIndex], $value); 
                         $colIndex++;
                     }
                     $rowIndex++;
                 }
     
-                // Save the modified file back
                 $writer = new Xlsx($spreadsheet);
                 $writer->save($filePath);
     
-                echo "Excel file has been updated and saved as $filePath";
+                echo "Excel file has been updated and saved as $filePath\n";
             } else {
                 echo "No data found for the provided patient ID.";
             }
@@ -102,23 +88,15 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
     function getPatientData($conn, $table, $pat_sw_id) {
+        $tableTimeNames = [
+            "a_medi" => ["db1_columns" => ["pat_sw_id", "start_dtime", "gtin", "medi_label", "active", "dose_mo", "dose_mi", "dose_ab", "dose_na", "gln", "pharmacode"], "db2_columns" => ["pat_sw_id", "start_dtime", "gtin", "medi_label", "active", "dose_mo", "dose_mi", "dose_ab", "dose_na", "gln", "pharmacode"]],
+            "a_vital" => ["db1_columns" => ["vital_dtime", "bmi", "bp_diast", "bp_syst", "pulse", "height", "weight", "body_temp"], "db2_columns" => ["vital_dtime", "bmi", "bp_diast", "bp_syst", "pulse", "height", "weight", "body_temp"]],
+            "a_labor" => ["db1_columns" => ["pat_sw_id", "measure_dtime", "lab_label", "lab_value", "unit_original", "unit_ucum", "ref_min", "ref_max", "gln", "external"], "db2_columns" => ["pat_sw_id", "lab_dtime", "lab_label", "lab_value", "unit_original", "unit_ucum", "ref_min", "ref_max", "gln", "external"]],
+        ];
+
         try {
-            $query = "SELECT DISTINCT * FROM $table WHERE pat_sw_id = :pat_sw_id ORDER BY lab_dtime";
-            echo $query . "\n";
-            echo "$pat_sw_id\n";
+            $query = "SELECT DISTINCT " . implode(", ", $tableTimeNames[$table]["db2_columns"]) . " FROM $table WHERE pat_sw_id = :pat_sw_id ORDER BY start_dtime";
             $stmt = $conn->prepare($query);
             $stmt->bindParam(':pat_sw_id', $pat_sw_id);
             $stmt->execute();

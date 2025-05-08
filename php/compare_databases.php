@@ -6,12 +6,12 @@
     use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
     // WORK
-    $db1name = 'fire5_test';   // Fabio
-    $db2name = 'fire5_vito_new';     // Heureka
+    //$db1name = 'fire5_test';   // Fabio
+    //$db2name = 'fire5_vito_new';     // Heureka
 
     // HOME
-    //$db1name = 'fire5_big_vitomed';   // Fabio
-    //$db2name = 'fire5_small_vitomed';     // Heureka
+    $db1name = 'fire5_big_vitomed';   // Fabio
+    $db2name = 'fire5_small_vitomed';     // Heureka
 
     $conn1 = get_db_connection($db1name);
     $conn2 = get_db_connection($db2name);
@@ -37,7 +37,7 @@
                 COUNT(*) AS patient_count,
                 pat_sw_id
             FROM $db2name.a_patient
-            WHERE birth_year IS NOT NULL AND sex IS NOT NULL AND pms_name = 'heureka'
+            WHERE birth_year IS NOT NULL AND sex IS NOT NULL AND pms_name = 'heureka_vitomed'
             GROUP BY birth_year, LOWER(sex), pat_sw_id
 
             UNION ALL
@@ -150,10 +150,8 @@
             $total_entries_db2 += $tot_entries;
             $total_match += $match_count;
 
-            echo $id1 . "\n";
 
-
-            $tot_entries_query = "SELECT COUNT(*) AS total FROM a_labor WHERE pat_sw_id = :pat_sw_id";
+            /*$tot_entries_query = "SELECT COUNT(*) AS total FROM a_labor WHERE pat_sw_id = :pat_sw_id";
             $tot_entries_conn = $conn2->prepare($tot_entries_query);
             $tot_entries_conn->execute(['pat_sw_id' => $id1]);
             $res_total = $tot_entries_conn->fetch(PDO::FETCH_ASSOC);
@@ -163,7 +161,7 @@
             $other_tot_entries_conn = $conn1->prepare($other_tot_entries_query);
             $other_tot_entries_conn->execute(['pat_sw_id' => $id2]);
             $other_res_total = $other_tot_entries_conn->fetch(PDO::FETCH_ASSOC);
-            $other_tot_entries = $other_res_total['total'];
+            $other_tot_entries = $other_res_total['total'];*/
     
             //$pair_key = $id1 < $id2 ? "$id1-$id2" : "$id2-$id1";
             $key = $id1;
@@ -186,6 +184,10 @@
                 if ($table == 'a_labor') {
                     $lab_matches[] = $id1 . "  " . $id2;
                 }
+            }
+
+            if ($id2 == 'C0B9DA3E1EA96382A25A957F5C11EC0F70C31D378B27409CDDC05C5E5A74F9E9' && $table == 'a_vital') {
+                echo $other_tot_entries . "\n";
             }
 
             $sheet->setCellValue("A$row", $id2);
@@ -413,13 +415,27 @@
                     $similarity_table[$name] = 0;
                 }
     
-                $small_query = "SELECT " . implode(", ", $columns["db2_columns"]) . " FROM $db2name.$tableName WHERE pat_sw_id = :pat_sw_id;";
+                $small_query = "SELECT " . implode(", ", $columns["db2_columns"]) . " FROM $db2name.$tableName WHERE pat_sw_id = :pat_sw_id";
+                if ($tableName == 'a_labor') {
+                    $small_query = "SELECT " . implode(", ", $columns["db2_columns"]) . " FROM $db2name.$tableName WHERE pat_sw_id = :pat_sw_id AND lab_dtime < '2025-04-02';";
+                }
                 $stmt_small = $conn2->prepare($small_query);
                 $stmt_small->execute(['pat_sw_id' => $pat_sw_id]);
                 $results = $stmt_small->fetchAll(PDO::FETCH_ASSOC);
     
                 if ($results) {
                     $tot_entries = count($results);
+
+                    $get_tot_query = "SELECT DISTINCT " . implode(", ", $columns["db2_columns"]) . " FROM $tableName WHERE pat_sw_id = :pat_sw_id";
+                    if ($tableName == 'a_labor') {
+                        $get_tot_query = "SELECT DISTINCT lab_label, lab_value, lab_dtime FROM a_labor WHERE pat_sw_id = :pat_sw_id AND lab_dtime < '2025-04-02'";
+                    }
+                    $stmt_tot = $conn2->prepare($get_tot_query);
+                    $stmt_tot->execute(['pat_sw_id' => $pat_sw_id]);
+                    $tot_result = $stmt_tot->fetchAll(PDO::FETCH_ASSOC);
+                    $tot_entries = count($tot_result);
+
+
                     foreach ($results_db1 as $other_pat_sw_id => $infos) {
                         foreach ($results as $result) {
                             $datetime = new DateTime($result[$columns["db2_columns"][0]]);
@@ -475,17 +491,21 @@
                             $matching_entries = $similarity_table[$other_pat_sw_id];
                             $other_tot_entries = count($infos[$columns["db1_columns"][0]]);
 
-                            $get_other_tot_query = "SELECT DISTINCT lab_label, lab_value, measure_dtime FROM a_labor WHERE pat_sw_id = :pat_sw_id";
+                            $get_other_tot_query = "SELECT DISTINCT " . implode(", ", $columns["db2_columns"]) . " FROM $tableName WHERE pat_sw_id = :pat_sw_id";
+                            if ($tableName == 'a_labor') {
+                                $get_other_tot_query = "SELECT DISTINCT lab_label, lab_value, measure_dtime FROM $tableName WHERE pat_sw_id = :pat_sw_id AND lab_value IS NOT NULL";
+                            }
                             $stmt_other_tot = $conn1->prepare($get_other_tot_query);
                             $stmt_other_tot->execute(['pat_sw_id' => $other_pat_sw_id]);
                             $other_tot_result = $stmt_other_tot->fetchAll(PDO::FETCH_ASSOC);
-                            if ($other_tot_result) {
-                                echo "-------->TOT: " . count($other_tot_result) . " + $other_pat_sw_id\n";
-                            }
+                            $other_tot_entries = count($other_tot_result);
         
                             if ($similarity_probability >= $match_threshold) {
                                 $matching_pairs[] = [$pat_sw_id, $other_pat_sw_id];
                                 $matching_results[$tableName][] = [$pat_sw_id, $other_pat_sw_id, $similarity_probability, $coverage_rate, $matching_entries, $tot_entries, $other_tot_entries];
+                                if ($other_pat_sw_id == 'C0B9DA3E1EA96382A25A957F5C11EC0F70C31D378B27409CDDC05C5E5A74F9E9' && $tableName == 'a_vital') {
+                                    print_r($matching_results[$tableName]);
+                                }
                             }
                         }
                     }
