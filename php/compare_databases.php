@@ -4,6 +4,8 @@
     require __DIR__ . '/vendor/autoload.php';
     use PhpOffice\PhpSpreadsheet\Spreadsheet;
     use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+    use PhpOffice\PhpSpreadsheet\IOFactory;
+
 
     // WORK
     //$db1name = 'fire5_test';   // Fabio
@@ -68,7 +70,39 @@
     $patients_big = 0;
     $match_threshold = 0.1;
     $matching_pairs = [];
-    $matching_results = ["a_labor" => [], "a_medi" => [], "a_vital" => []];
+    $matching_results = ["a_labor" => [], "a_medi" => [], "a_vital" => [], "a_pdlist" => []];
+    $matches_findMatch = ["a_labor" => 0, "a_pdlist" => 0];
+    $unmatches_findMatch = ["a_labor" => 0, "a_pdlist" => 0];
+
+
+
+
+    $fileName = "matching_values.xlsx";
+    $filePath = "files/" . $fileName;
+
+
+    /*if (file_exists($filePath)) {
+        echo "LOOASD\n";
+        $spreadsheet = IOFactory::load($filePath);
+        
+    } else {*/
+        $spreadsheet = new Spreadsheet();
+    //}
+
+    //$matching_sheet["a_labor"] = $spreadsheet->createSheet();
+    //$matching_sheet["a_labor"]->setTitle("matches LABOR");
+    $unmatching_sheet["a_labor"] = $spreadsheet->createSheet();
+    $unmatching_sheet["a_labor"]->setTitle("non matches LABOR (Fire5)");
+
+    //$matching_sheet["a_pdlist"] = $spreadsheet->createSheet();
+    //$matching_sheet["a_pdlist"]->setTitle("matches PDLIST");
+    $unmatching_sheet["a_pdlist"] = $spreadsheet->createSheet();
+    $unmatching_sheet["a_pdlist"]->setTitle("non matches PDLIST (Fire5)");
+    $writer = new Xlsx($spreadsheet);
+
+    $rows_idx = ["matches" => ["a_labor" => 2, "a_pdlist" => 2], "unmatches" => ["a_labor" => 2, "a_pdlist" => 2]];
+
+
 
     //foreach ($tableTimeNames as $tableName => $dateColumnName) {
         //echo "$tableName\n";
@@ -77,21 +111,81 @@
             echo "Sex: " . $entry["sex"] . "          Birth year: " . $entry["birth_year"] . "\n";
             echo "-------------------------------------------------------------------------------------\n";
             compareTableGeneral($entry);
+            findMathces($entry);
             echo "-------------------------------------------------------------------------------------\n";
         }
         //echo "\n\n\n";
     //}
 
 
+
+    /*$row = 1;
+    $FIRE5_sheet = $spreadsheet->createSheet();
+    $FIRE5_sheet->setTitle("FIRE5 LABWERTE");
+    $labor_FIRE5_query = "SELECT pat_sw_id, measure_dtime, lab_label, lab_value, unit_original FROM a_labor ORDER BY measure_dtime";
+    if ($FIRE5_result = $conn1->query($labor_FIRE5_query)) {
+        $row = $FIRE5_result->fetchAll(PDO::FETCH_ASSOC);
+        $rowIdx = 2;
+        foreach ($row as $r) {
+            $colIdx = 1;
+            foreach($r as $value) {
+                $FIRE5_sheet->setCellValue([$colIdx, $rowIdx], $value);
+                $colIdx++;
+            }
+            $rowIdx++;
+        }
+    }
+
+
+    $row = 1;
+    $HEUREKA_sheet = $spreadsheet->createSheet();
+    $HEUREKA_sheet->setTitle("HEUREKA LABWERTE");
+    $labor_HEUREKA_query = "SELECT pat_sw_id, measure_dtime, lab_label, lab_value, unit_original FROM a_labor ORDER BY measure_dtime";
+    if ($HEUREKA_result = $conn2->query($labor_HEUREKA_query)) {
+        $row = $HEUREKA_result->fetchAll(PDO::FETCH_ASSOC);
+        $rowIdx = 2;
+        foreach ($row as $r) {
+            $colIdx = 1;
+            foreach($r as $value) {
+                $HEUREKA_sheet->setCellValue([$colIdx, $rowIdx], $value);
+                $colIdx++;
+            }
+            $rowIdx++;
+        }
+    }*/
+
+
+
+    $writer->save("files/$fileName");
+
+
+
+
+
+
+    foreach ($matches_findMatch as $table => $matches) {
+        echo "TOTAL MATCHES FOR " . $table . ": " . $matches . "\n";
+    }
+
+    foreach ($unmatches_findMatch as $table => $matches) {
+        echo "TOTAL UNMATCHES FOR " . $table . ": " . $matches . "\n";
+    }
+
+
+
+
+
     $vital_matches = 0;
     $medi_matches = 0;
     $labor_matches = 0;
+    $pdlist_matches = 0;
 
     $vital_match_count = 0;
     $medi_match_count = 0;
     $labor_match_count = 0;
+    $pdlist_match_count = 0;
 
-    $match_counts = ["a_vital" => ["matches" => 0, "total_entries" => 0], "a_medi" => ["matches" => 0, "total_entries" => 0], "a_labor" => ["matches" => 0, "total_entries" => 0]];
+    $match_counts = ["a_vital" => ["matches" => 0, "total_entries" => 0], "a_medi" => ["matches" => 0, "total_entries" => 0], "a_labor" => ["matches" => 0, "total_entries" => 0], "a_pdlist" => ["matches" => 0, "total_entries" => 0]];
 
     $spreadsheet = new Spreadsheet();
 
@@ -126,7 +220,7 @@
 
         echo "$table\n";
         $row = 2;
-        $total_match_count = ['a_vital' => 0, 'a_medi' => 0, 'a_labor' => 0];
+        $total_match_count = ['a_vital' => 0, 'a_medi' => 0, 'a_labor' => 0, 'a_pdlist' => 0];
 
         $total_diff_fire5 = 0;
         $total_diff_heureka = 0;
@@ -149,19 +243,6 @@
             $total_entries_db1 += $other_tot_entries;
             $total_entries_db2 += $tot_entries;
             $total_match += $match_count;
-
-
-            /*$tot_entries_query = "SELECT COUNT(*) AS total FROM a_labor WHERE pat_sw_id = :pat_sw_id";
-            $tot_entries_conn = $conn2->prepare($tot_entries_query);
-            $tot_entries_conn->execute(['pat_sw_id' => $id1]);
-            $res_total = $tot_entries_conn->fetch(PDO::FETCH_ASSOC);
-            $tot_entries = $res_total['total'];
-
-            $other_tot_entries_query = "SELECT COUNT(*) AS total FROM a_labor WHERE pat_sw_id = :pat_sw_id";
-            $other_tot_entries_conn = $conn1->prepare($other_tot_entries_query);
-            $other_tot_entries_conn->execute(['pat_sw_id' => $id2]);
-            $other_res_total = $other_tot_entries_conn->fetch(PDO::FETCH_ASSOC);
-            $other_tot_entries = $other_res_total['total'];*/
     
             //$pair_key = $id1 < $id2 ? "$id1-$id2" : "$id2-$id1";
             $key = $id1;
@@ -172,6 +253,8 @@
                 $medi_matches += 1;
             } else if ($table == 'a_labor') {
                 $labor_matches += 1;
+            } else if ($table == 'a_pdlist') {
+                $pdlist_matches += 1;
             }
     
             if (!isset($unique_pairs_db2[$key])) {
@@ -213,18 +296,6 @@
         } 
 
 
-        /*$total_entries_db1_query = "SELECT COUNT(*) AS total FROM a_labor";
-        $total_entries_db1_conn = $conn1->prepare($total_entries_db1_query);
-        $total_entries_db1_conn->execute();
-        $res_total = $total_entries_db1_conn->fetch(PDO::FETCH_ASSOC);
-        $total_entries_db1 = $res_total['total'];
-
-        $total_entries_db2_query = "SELECT COUNT(*) AS total FROM a_labor";
-        $total_entries_db2_conn = $conn2->prepare($total_entries_db2_query);
-        $total_entries_db2_conn->execute();
-        $res_total = $total_entries_db1_conn->fetch(PDO::FETCH_ASSOC);
-        $total_entries_db2 = $res_total['total'];*/
-
         $sheet->setCellValue("C$row", $total_entries_db1);
         $sheet->setCellValue("D$row", $total_entries_db2);
         $sheet->setCellValue("E$row", $total_match);
@@ -243,6 +314,7 @@
     echo "PATIENTS FOUND THANKS TO VITAL: " . $vital_matches . "\n";
     echo "PATIENTS FOUND THANKS TO MEDI: " . $medi_matches . "\n";
     echo "PATIENTS FOUND THANKS TO LABOR: " . $labor_matches . "\n";
+    echo "PATIENTS FOUND THANKS TO PDLIST: " . $pdlist_matches . "\n";
     
 
     $sheet = $spreadsheet->createSheet();
@@ -381,7 +453,8 @@
         $tableTimeNames = [
             "a_medi" => ["db1_columns" => ["start_dtime", "gtin"], "db2_columns" => ["start_dtime", "gtin"]],
             "a_vital" => ["db1_columns" => ["vital_dtime", "bmi", "bp_diast", "bp_syst", "pulse", "height", "weight", "body_temp"], "db2_columns" => ["vital_dtime", "bmi", "bp_diast", "bp_syst", "pulse", "height", "weight", "body_temp"]],
-            "a_labor" => ["db1_columns" => ["measure_dtime", "lab_label", "lab_value"], "db2_columns" => ["lab_dtime", "lab_label", "lab_value"]],
+            "a_labor" => ["db1_columns" => ["measure_dtime", "lab_label", "lab_value", "unit_original"], "db2_columns" => ["lab_dtime", "lab_label", "lab_value", "unit_original"]],
+            "a_pdlist" => ["db1_columns" => ["pd_start_dtime", "description"], "db2_columns" => ["pd_start_dtime", "description"]]
         ];
     
         $pat_sw_ids_small_vitomed = explode(',', $entry['pat_sw_ids_small_vitomed']);
@@ -428,7 +501,7 @@
 
                     $get_tot_query = "SELECT DISTINCT " . implode(", ", $columns["db2_columns"]) . " FROM $tableName WHERE pat_sw_id = :pat_sw_id";
                     if ($tableName == 'a_labor') {
-                        $get_tot_query = "SELECT DISTINCT lab_label, lab_value, lab_dtime FROM a_labor WHERE pat_sw_id = :pat_sw_id AND lab_dtime < '2025-04-02'";
+                        $get_tot_query = "SELECT DISTINCT lab_label, lab_value, lab_dtime, unit_original FROM a_labor WHERE pat_sw_id = :pat_sw_id AND lab_dtime < '2025-04-02'";
                     }
                     $stmt_tot = $conn2->prepare($get_tot_query);
                     $stmt_tot->execute(['pat_sw_id' => $pat_sw_id]);
@@ -442,11 +515,22 @@
                             $formatted_datetime = $datetime->format('Y-m-d H:i:s');
                             $formatted_datetime_minus_1 = $datetime->modify('-1 hour')->format('Y-m-d H:i:s');
                             $formatted_datetime_minus_2 = $datetime->modify('-2 hours')->format('Y-m-d H:i:s');
+
+                            if ($tableName == 'a_pdlist') {
+                                $formatted_datetime = $datetime->format('Y-m-d');
+                                $formatted_datetime_minus_1 = $datetime->modify('-1 hour')->format('Y-m-d');
+                                $formatted_datetime_minus_2 = $datetime->modify('-2 hours')->format('Y-m-d');
+                            }
     
                             $dates = $infos[$columns["db1_columns"][0]] ?? [];
                             $match_found = false;
                             $match_count = 0;
                             foreach ($dates as $i => $date) {
+                                if ($tableName == 'a_pdlist') {
+                                    $dateTemp = new DateTime($date);
+                                    $date = $dateTemp->format('Y-m-d');
+                                }
+
                                 if ($formatted_datetime == $date || $formatted_datetime_minus_1 == $date || $formatted_datetime_minus_2 == $date) {
                                     if ($tableName == "a_medi") {
                                         if ($result[$columns["db2_columns"][1]] == ($infos[$columns["db1_columns"][1]][$i] ?? null)) {
@@ -474,7 +558,14 @@
                                             $similarity_table[$other_pat_sw_id] += 1;
                                             $match_found = true;
                                         }
+                                    } else if ($tableName == "a_pdlist") {
+                                        $description_match = ($result["description"] ?? null) == ($infos["description"][$i] ?? null) && $result["description"] !== null;
+                                        if ($description_match) {
+                                            $similarity_table[$other_pat_sw_id] += 1;
+                                            $match_found = true;
+                                        }
                                     }
+                                    
                                     if ($match_found) break;
                                 }
                             }
@@ -512,6 +603,168 @@
                 }
             }
         }
+    }
+
+
+
+    $rows_idx = ["matches" => ["a_labor" => 2], "unmatches" => ["a_pdlist" => 2]];
+
+    $test = 0;
+
+
+    function findMathces($entry) {
+        global $conn1, $conn2;
+        global $db1name, $db2name;
+        global $matches_findMatch, $unmatches_findMatch;
+        global $rows_idx;
+        global $matching_sheet, $unmatching_sheet;
+        global $test;
+
+        $pat_sw_ids_small_vitomed = explode(',', $entry['pat_sw_ids_small_vitomed']);
+        $pat_sw_ids_big_vitomed = explode(',', $entry['pat_sw_ids_big_vitomed']);
+
+        $quoted_ids = implode(', ', array_map(fn($id) => "'" . addslashes($id) . "'", $pat_sw_ids_small_vitomed));
+        //$quoted_ids = implode(', ', array_map(fn($id) => "'" . addslashes($id) . "'", $pat_sw_ids_big_vitomed));
+
+
+        $tableTimeNames = [
+            "a_labor" => ["db1_columns" => ["measure_dtime", "lab_label", "lab_value", "unit_original"], "db2_columns" => ["measure_dtime", "lab_label", "lab_value", "unit_original"]],
+            "a_pdlist" => ["db1_columns" => ["pd_start_dtime", "description"], "db2_columns" => ["pd_start_dtime", "description"]]
+        ];
+
+        $table_matches = ["a_labor" => 0, "a_pdlist" => 0];
+
+
+        foreach ($tableTimeNames as $table => $columns) {
+            $db1Cols = $columns['db1_columns'];
+            $db2Cols = $columns['db2_columns'];
+
+            echo "Running query for `$table`...\n";
+            $tot_matches = 0;
+            $tot_unmatches = 0;
+
+            foreach ($pat_sw_ids_big_vitomed as $pat_sw_id) {
+                $joinConditions = [];
+                $columns = [];
+        
+                /*foreach ($db1Cols as $i => $col1) {
+                    $col2 = $db2Cols[$i];
+                    $columns[] = $col1;
+    
+                    if ($table == 'a_pdlist' && $col1 == 'pd_start_dtime') {
+                        $joinConditions[] = "DATE(t1.$col1) = DATE(t2.$col2)";
+                    } else {
+                        $joinConditions[] = "t1.$col1 = t2.$col2";
+                    }
+                }
+
+                $selected_columns = implode(', ', array_map(fn($column) => "t1." . addslashes($column), $columns));
+            
+                $joinSQL = "SELECT $selected_columns\nFROM $db1name.$table AS t1\nINNER JOIN $db2name.$table AS t2\n  ON " . implode("\n AND ", $joinConditions) . " WHERE t1.pat_sw_id = '$pat_sw_id' AND t2.pat_sw_id IN ($quoted_ids);\n";
+
+                if ($result = $conn1->query($joinSQL)) {
+                    $row = $result->fetchAll(PDO::FETCH_ASSOC);
+                    if (count($row) > 0) {
+                        $tot_matches += count($row);
+                        foreach ($row as $r) {
+                            $colIdx = 1;
+                            foreach($r as $value) {
+                                $matching_sheet[$table]->setCellValue([$colIdx, $rows_idx["matches"][$table]], $value);
+                                $colIdx++;
+                            }
+                            $rows_idx["matches"][$table]++;
+                        }
+                        $rows_idx["matches"][$table]++;
+                    }
+                } else {    
+                    echo "Error executing query for `$table`: " . $conn1->error . "\n";
+                }*/
+
+
+
+                //FIRE5 HAS, HEUREKA DOESN'T
+                if ($table == 'a_pdlist') {
+                    $missingSQL = "SELECT pat_sw_id, description, pd_start_dtime, pd_stop_dtime
+                    FROM fire5_big_vitomed.a_pdlist AS t1
+                    WHERE t1.pat_sw_id = '$pat_sw_id'
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM fire5_small_vitomed.a_pdlist AS t2
+                        WHERE DATE(t1.pd_start_dtime) = DATE(t2.pd_start_dtime)
+                        AND t1.description = t2.description
+                        AND t2.pat_sw_id IN ($quoted_ids)
+                    );
+                    ";
+                } else if ($table == 'a_labor'){
+                    $missingSQL = "SELECT pat_sw_id, measure_dtime, lab_label, lab_value, unit_original
+                    FROM fire5_big_vitomed.a_labor AS t1
+                    WHERE t1.pat_sw_id = '$pat_sw_id'
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM fire5_small_vitomed.a_labor AS t2
+                        WHERE t1.measure_dtime = t2.lab_dtime
+                        AND t1.lab_label = t2.lab_label
+                        AND t1.lab_value = t2.lab_value
+                        AND t1.unit_original = t2.unit_original
+                        AND t2.pat_sw_id IN ($quoted_ids)
+                    );
+                    ";
+                }
+
+
+                // HEUREKA HAS, FIRE5 DOESN'T
+                /*if ($table == 'a_pdlist') {
+                    $missingSQL = "SELECT pat_sw_id, description, pd_start_dtime, pd_stop_dtime
+                    FROM fire5_small_vitomed.a_pdlist AS t1
+                    WHERE t1.pat_sw_id = '$pat_sw_id'
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM fire5_big_vitomed.a_pdlist AS t2
+                        WHERE DATE(t1.pd_start_dtime) = DATE(t2.pd_start_dtime)
+                        AND t1.description = t2.description
+                        AND t2.pat_sw_id IN ($quoted_ids)
+                    );
+                    ";
+                } else if ($table == 'a_labor'){
+                    $missingSQL = "SELECT pat_sw_id, measure_dtime, lab_label, lab_value, unit_original
+                    FROM fire5_small_vitomed.a_labor AS t1
+                    WHERE t1.pat_sw_id = '$pat_sw_id'
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM fire5_big_vitomed.a_labor AS t2
+                        WHERE t1.measure_dtime = t2.measure_dtime
+                        AND t1.lab_label = t2.lab_label
+                        AND t1.lab_value = t2.lab_value
+                        AND t1.unit_original = t2.unit_original
+                        AND t2.pat_sw_id IN ($quoted_ids)
+                    );
+                    ";
+                }*/
+
+                
+                if ($result = $conn1->query($missingSQL)) {
+                    $row = $result->fetchAll(PDO::FETCH_ASSOC);
+                    if (count($row) > 0) {
+                        $tot_unmatches += count($row);
+                        foreach ($row as $r) {
+                            $colIdx = 1;
+                                foreach($r as $value) {
+                                    $unmatching_sheet[$table]->setCellValue([$colIdx, $rows_idx["unmatches"][$table]], $value);
+                                    $colIdx++;
+                                }
+                                $rows_idx["unmatches"][$table]++;
+                        }
+                        $rows_idx["unmatches"][$table]++;
+                    }   
+                }
+            }
+
+            echo "MATCHES " . $table . " " . $tot_matches . "\n";
+            $matches_findMatch[$table] += $tot_matches;
+            $unmatches_findMatch[$table] += $tot_unmatches;
+        }
+        $test++;
+
     }
     
 ?>
