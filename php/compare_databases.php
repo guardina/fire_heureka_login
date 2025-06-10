@@ -8,12 +8,12 @@
 
 
     // WORK
-    //$db1name = 'fire5_test';   // Fabio
-    //$db2name = 'fire5_vito_new';     // Heureka
+    $db1name = 'fire5_test';   // Fabio
+    $db2name = 'fire5_vito_new';     // Heureka
 
     // HOME
-    $db1name = 'fire5_big_vitomed';   // Fabio
-    $db2name = 'fire5_small_vitomed';     // Heureka
+    //$db1name = 'fire5_big_vitomed';   // Fabio
+    //$db2name = 'fire5_small_vitomed';     // Heureka
 
     $conn1 = get_db_connection($db1name);
     $conn2 = get_db_connection($db2name);
@@ -39,7 +39,7 @@
                 COUNT(*) AS patient_count,
                 pat_sw_id
             FROM $db2name.a_patient
-            WHERE birth_year IS NOT NULL AND sex IS NOT NULL AND pms_name = 'heureka_vitomed'
+            WHERE birth_year IS NOT NULL AND sex IS NOT NULL AND pms_name = 'heureka' && insert_dtime > '2025-06-01'
             GROUP BY birth_year, LOWER(sex), pat_sw_id
 
             UNION ALL
@@ -77,7 +77,7 @@
 
 
 
-    $fileName = "matching_values.xlsx";
+    $fileName = "matching_values_june_25.xlsx";
     $filePath = "files/" . $fileName;
 
 
@@ -343,7 +343,7 @@
     $spreadsheet->removeSheetByIndex(0);
 
     $writer = new Xlsx($spreadsheet);
-    $writer->save('files/matches.xlsx');
+    $writer->save('files/matches_june_25.xlsx');
 
 
     $sql = "SELECT DISTINCT pat_sw_id, birth_year, sex FROM a_patient ORDER BY birth_year ASC, sex ASC";
@@ -375,7 +375,7 @@
     echo "Total unmatched: $count\n";
 
     $matched_ids2 = array_unique($missing_patients2);
-    writeToFile("files/notmatches2.txt", $matched_ids2);
+    writeToFile("files/notmatches2_june_25.txt", $matched_ids2);
 
 
 
@@ -405,10 +405,10 @@
     echo "Total unmatched: $count\n";
     
     $matched_ids1 = array_unique($missing_patients1);
-    writeToFile("files/notmatches1.txt", $matched_ids1);
+    writeToFile("files/notmatches1_june_25.txt", $matched_ids1);
 
     
-    writeToFile("files/lab_matches", $lab_matches);
+    writeToFile("files/lab_matches_june_25", $lab_matches);
 
 
 
@@ -469,7 +469,7 @@
             foreach ($pat_sw_ids_big_vitomed as $pat_sw_id) {
                 $similarity_table[$pat_sw_id] = 0;
     
-                $big_query = "SELECT DISTINCT " . implode(", ", $columns["db1_columns"]) . " FROM $db1name.$tableName WHERE pat_sw_id = :pat_sw_id;";
+                $big_query = "SELECT DISTINCT " . implode(", ", $columns["db1_columns"]) . " FROM $db1name.$tableName WHERE pat_sw_id = :pat_sw_id AND insert_dtime > '2025-06-01'";
                 $stmt_big = $conn1->prepare($big_query);
                 $stmt_big->execute(['pat_sw_id' => $pat_sw_id]);
                 $results = $stmt_big->fetchAll(PDO::FETCH_ASSOC);
@@ -488,7 +488,7 @@
                     $similarity_table[$name] = 0;
                 }
     
-                $small_query = "SELECT " . implode(", ", $columns["db2_columns"]) . " FROM $db2name.$tableName WHERE pat_sw_id = :pat_sw_id";
+                $small_query = "SELECT " . implode(", ", $columns["db2_columns"]) . " FROM $db2name.$tableName WHERE pat_sw_id = :pat_sw_id AND insert_dtime > '2025-06-01'";
                 if ($tableName == 'a_labor') {
                     $small_query = "SELECT " . implode(", ", $columns["db2_columns"]) . " FROM $db2name.$tableName WHERE pat_sw_id = :pat_sw_id AND lab_dtime < '2025-04-02';";
                 }
@@ -499,7 +499,7 @@
                 if ($results) {
                     $tot_entries = count($results);
 
-                    $get_tot_query = "SELECT DISTINCT " . implode(", ", $columns["db2_columns"]) . " FROM $tableName WHERE pat_sw_id = :pat_sw_id";
+                    $get_tot_query = "SELECT DISTINCT " . implode(", ", $columns["db2_columns"]) . " FROM $tableName WHERE pat_sw_id = :pat_sw_id AND insert_dtime > '2025-06-01'";
                     if ($tableName == 'a_labor') {
                         $get_tot_query = "SELECT DISTINCT lab_label, lab_value, lab_dtime, unit_original FROM a_labor WHERE pat_sw_id = :pat_sw_id AND lab_dtime < '2025-04-02'";
                     }
@@ -685,11 +685,11 @@
                 //FIRE5 HAS, HEUREKA DOESN'T
                 if ($table == 'a_pdlist') {
                     $missingSQL = "SELECT pat_sw_id, description, pd_start_dtime, pd_stop_dtime
-                    FROM fire5_big_vitomed.a_pdlist AS t1
+                    FROM $db1name.a_pdlist AS t1
                     WHERE t1.pat_sw_id = '$pat_sw_id'
                     AND NOT EXISTS (
                         SELECT 1
-                        FROM fire5_small_vitomed.a_pdlist AS t2
+                        FROM $db2name.a_pdlist AS t2
                         WHERE DATE(t1.pd_start_dtime) = DATE(t2.pd_start_dtime)
                         AND t1.description = t2.description
                         AND t2.pat_sw_id IN ($quoted_ids)
@@ -697,11 +697,11 @@
                     ";
                 } else if ($table == 'a_labor'){
                     $missingSQL = "SELECT pat_sw_id, measure_dtime, lab_label, lab_value, unit_original
-                    FROM fire5_big_vitomed.a_labor AS t1
+                    FROM $db1name.a_labor AS t1
                     WHERE t1.pat_sw_id = '$pat_sw_id'
                     AND NOT EXISTS (
                         SELECT 1
-                        FROM fire5_small_vitomed.a_labor AS t2
+                        FROM $db2name.a_labor AS t2
                         WHERE t1.measure_dtime = t2.lab_dtime
                         AND t1.lab_label = t2.lab_label
                         AND t1.lab_value = t2.lab_value
@@ -715,11 +715,11 @@
                 // HEUREKA HAS, FIRE5 DOESN'T
                 /*if ($table == 'a_pdlist') {
                     $missingSQL = "SELECT pat_sw_id, description, pd_start_dtime, pd_stop_dtime
-                    FROM fire5_small_vitomed.a_pdlist AS t1
+                    FROM $db2name.a_pdlist AS t1
                     WHERE t1.pat_sw_id = '$pat_sw_id'
                     AND NOT EXISTS (
                         SELECT 1
-                        FROM fire5_big_vitomed.a_pdlist AS t2
+                        FROM $db1name.a_pdlist AS t2
                         WHERE DATE(t1.pd_start_dtime) = DATE(t2.pd_start_dtime)
                         AND t1.description = t2.description
                         AND t2.pat_sw_id IN ($quoted_ids)
@@ -727,11 +727,11 @@
                     ";
                 } else if ($table == 'a_labor'){
                     $missingSQL = "SELECT pat_sw_id, measure_dtime, lab_label, lab_value, unit_original
-                    FROM fire5_small_vitomed.a_labor AS t1
+                    FROM $db2name.a_labor AS t1
                     WHERE t1.pat_sw_id = '$pat_sw_id'
                     AND NOT EXISTS (
                         SELECT 1
-                        FROM fire5_big_vitomed.a_labor AS t2
+                        FROM $db1name.a_labor AS t2
                         WHERE t1.measure_dtime = t2.measure_dtime
                         AND t1.lab_label = t2.lab_label
                         AND t1.lab_value = t2.lab_value
